@@ -1,6 +1,6 @@
 import type { User, Cat, EmergencyReport } from './types';
 
-// ===== Demo User =====
+// --- demo user ---
 export const demoUser: User = {
   id: 'user-001',
   fullName: 'Ahmed Hassan',
@@ -10,7 +10,7 @@ export const demoUser: User = {
   updatedAt: '2025-05-01T12:00:00.000Z',
 };
 
-// ===== Demo Cats =====
+// --- demo cats ---
 export const demoCats: Cat[] = [
   {
     id: 'cat-001',
@@ -126,7 +126,7 @@ export const demoCats: Cat[] = [
   },
 ];
 
-// ===== Demo Emergency Reports =====
+// --- demo emergency reports ---
 export const demoEmergencies: EmergencyReport[] = [
   {
     id: 'emg-001',

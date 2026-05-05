@@ -1,4 +1,4 @@
-// ===== User Types =====
+// --- user ---
 export type UserRole = 'student' | 'volunteer' | 'admin';
 
 export interface User {
@@ -10,7 +10,7 @@ export interface User {
   updatedAt: string;
 }
 
-// ===== Cat Types =====
+// --- cats ---
 export type HealthStatus = 'healthy' | 'needs_attention' | 'injured' | 'unknown';
 export type OwnershipTag = 'stray' | 'adopted' | 'campus_managed' | 'unknown';
 
@@ -29,7 +29,7 @@ export interface Cat {
   updatedAt: string;
 }
 
-// ===== Emergency Types =====
+// --- emergencies ---
 export type EmergencyType = 'injury' | 'sickness' | 'missing' | 'feeding_urgent' | 'danger' | 'other';
 export type Priority = 'low' | 'medium' | 'high' | 'critical';
 export type EmergencyStatus = 'open' | 'in_progress' | 'resolved' | 'cancelled';
@@ -52,7 +52,7 @@ export interface EmergencyReport {
   cat: { id: string; nickname: string } | null;
 }
 
-// ===== API Response Types =====
+// --- api responses ---
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -77,7 +77,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// ===== App View Types =====
+// --- views / pages ---
 export type AppView =
   | 'login'
   | 'register'
@@ -90,7 +90,7 @@ export type AppView =
   | 'create-emergency'
   | 'profile';
 
-// ===== Form Types =====
+// --- form data ---
 export interface LoginFormData {
   email: string;
   password: string;
@@ -124,7 +124,7 @@ export interface CreateEmergencyFormData {
   longitude: number;
 }
 
-// ===== Filter Types =====
+// --- filters ---
 export interface CatFilters {
   page?: number;
   pageSize?: number;

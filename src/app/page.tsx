@@ -72,7 +72,7 @@ export default function Home() {
   const { currentView, isAuthenticated, sidebarOpen, setSidebarOpen, toggleSidebar } = useAppStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Sync sidebar collapsed state with screen size
+  // on small screens the sidebar should never be collapsed
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
@@ -88,12 +88,12 @@ export default function Home() {
     setSidebarCollapsed((prev) => !prev);
   };
 
-  // Auth views (no layout)
+  // not logged in? show login/register screens
   if (!isAuthenticated) {
     return <AuthRouter view={currentView} />;
   }
 
-  // App views with layout
+  // logged in — show the main app with sidebar + header
   return (
     <div className="min-h-screen bg-background">
       <Sidebar

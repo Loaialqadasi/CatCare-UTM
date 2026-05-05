@@ -35,7 +35,7 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      // Initial auth state - auto-login with demo user
+      // starts logged in with a demo account so you can explore the app right away
       user: {
         id: 'user-001',
         fullName: 'Ahmed Hassan',
@@ -93,7 +93,7 @@ export const useAppStore = create<AppState>()(
   )
 );
 
-// ===== Data Cache Store =====
+// --- data cache ---
 interface DataCacheState {
   cats: Cat[];
   catsPagination: { page: number; pageSize: number; totalItems: number; totalPages: number };

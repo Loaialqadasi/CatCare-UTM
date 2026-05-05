@@ -93,7 +93,7 @@ export function StatsCards() {
           criticalReports: priorityFeed.filter((e) => e.priority === 'critical' || e.priority === 'high').length,
         });
       } catch {
-        // Fallback stats
+        // worst case, just show some default numbers
         setStats({
           totalCats: 8,
           openEmergencies: 4,

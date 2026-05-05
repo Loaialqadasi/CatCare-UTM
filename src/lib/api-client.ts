@@ -15,12 +15,12 @@ import type {
 import { demoUser, demoCats, demoEmergencies } from './mock-data';
 
 const API_BASE = '/api';
-const BACKEND_AVAILABLE = false; // Set to true when backend is running
+const BACKEND_AVAILABLE = false; // flip this to true once the backend API is live
 
-// Simulate network delay for mock mode
+// fake a small delay so the UI shows loading states
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// ===== Auth API =====
+// --- auth ---
 export async function login(data: LoginFormData): Promise<{ user: User; token: string }> {
   if (BACKEND_AVAILABLE) {
     const res = await fetch(`${API_BASE}/auth/login`, {
@@ -33,12 +33,12 @@ export async function login(data: LoginFormData): Promise<{ user: User; token: s
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(800);
   if (data.email === demoUser.email && data.password === 'password123') {
     return { user: demoUser, token: 'mock-jwt-token-xyz' };
   }
-  // Accept any email/password in demo mode
+  // in demo mode we just let anyone in
   return {
     user: { ...demoUser, email: data.email },
     token: 'mock-jwt-token-xyz',
@@ -57,7 +57,7 @@ export async function register(data: RegisterFormData): Promise<{ user: User; to
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(1000);
   const newUser: User = {
     id: `user-${Date.now()}`,
@@ -80,12 +80,12 @@ export async function getMe(token: string): Promise<User> {
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(300);
   return demoUser;
 }
 
-// ===== Cats API =====
+// --- cats ---
 export async function fetchCats(
   filters: CatFilters = {},
   _token?: string
@@ -107,7 +107,7 @@ export async function fetchCats(
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(600);
 
   let filtered = [...demoCats];
@@ -144,7 +144,7 @@ export async function fetchCatById(id: string, _token?: string): Promise<Cat> {
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(400);
   const cat = demoCats.find((c) => c.id === id);
   if (!cat) throw new Error('Cat not found');
@@ -172,7 +172,7 @@ export async function createCat(
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(1000);
   const newCat: Cat = {
     id: `cat-${Date.now()}`,
@@ -192,7 +192,7 @@ export async function createCat(
   return newCat;
 }
 
-// ===== Emergencies API =====
+// --- emergencies ---
 export async function fetchEmergencies(
   filters: EmergencyFilters = {},
   _token?: string
@@ -214,7 +214,7 @@ export async function fetchEmergencies(
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(600);
 
   let filtered = [...demoEmergencies];
@@ -248,7 +248,7 @@ export async function fetchEmergencyById(
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(400);
   const emergency = demoEmergencies.find((e) => e.id === id);
   if (!emergency) throw new Error('Emergency report not found');
@@ -265,7 +265,7 @@ export async function fetchPriorityFeed(_token?: string): Promise<EmergencyRepor
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(500);
   const priorityOrder: Record<string, number> = {
     critical: 0,
@@ -296,7 +296,7 @@ export async function createEmergency(
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(1000);
   const cat = data.catId ? demoCats.find((c) => c.id === data.catId) : null;
   const newEmergency: EmergencyReport = {
@@ -339,7 +339,7 @@ export async function updateEmergencyStatus(
     return json.data;
   }
 
-  // Mock mode
+  // using demo data
   await delay(500);
   const emergency = demoEmergencies.find((e) => e.id === id);
   if (!emergency) throw new Error('Emergency not found');
