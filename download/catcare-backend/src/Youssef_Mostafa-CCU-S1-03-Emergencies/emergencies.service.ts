@@ -8,7 +8,7 @@ import {
   EmergencyListResult,
   EmergencyReportWithCat,
   EmergencyStatus
-} from './emergencies.types.ts';
+} from './emergencies.types.js';
 
 // only certain transitions are allowed — prevents jumping from open straight to cancelled for example
 const statusTransitions: Record<EmergencyStatus, EmergencyStatus[]> = {

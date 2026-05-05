@@ -15,7 +15,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_EXPIRES_IN: z.string().min(1),
   CORS_ORIGIN: z.string().min(1),
-  ENCRYPTION_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/, 'ENCRYPTION_KEY must be a 64-character hex string (run: openssl rand -hex 32)')
+  ENCRYPTION_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/, 'ENCRYPTION_KEY must be a 64-character hex string (run: openssl rand -hex 32)').optional().default('0'.repeat(64))
 });
 
 const parsed = envSchema.safeParse(process.env);

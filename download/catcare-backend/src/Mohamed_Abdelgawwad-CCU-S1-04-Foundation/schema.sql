@@ -1,4 +1,8 @@
-CREATE DATABASE IF NOT EXISTS catcare_utm;
+-- CatCare UTM Database Setup
+-- Import this file in phpMyAdmin: go to Import tab, select this file, and click Go.
+-- Make sure to select a database first (or this will create one for you).
+
+CREATE DATABASE IF NOT EXISTS catcare_utm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE catcare_utm;
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -7,6 +11,7 @@ DROP TABLE IF EXISTS cats;
 DROP TABLE IF EXISTS users;
 SET FOREIGN_KEY_CHECKS = 1;
 
+-- ─── Users ───
 CREATE TABLE users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   full_name VARCHAR(120) NOT NULL,
@@ -16,9 +21,11 @@ CREATE TABLE users (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_users_email (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  UNIQUE KEY uq_users_email (email),
+  KEY idx_users_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ─── Cats ───
 CREATE TABLE cats (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   nickname VARCHAR(100) NOT NULL,
@@ -35,8 +42,9 @@ CREATE TABLE cats (
   PRIMARY KEY (id),
   KEY idx_cats_created_at (created_at),
   CONSTRAINT fk_cats_created_by_user FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ─── Emergency Reports ───
 CREATE TABLE emergency_reports (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   cat_id BIGINT UNSIGNED NULL,
@@ -59,6 +67,4 @@ CREATE TABLE emergency_reports (
   KEY idx_emergency_reports_cat_id (cat_id),
   CONSTRAINT fk_emergency_reports_cat FOREIGN KEY (cat_id) REFERENCES cats(id) ON DELETE SET NULL,
   CONSTRAINT fk_emergency_reports_reported_by FOREIGN KEY (reported_by_user_id) REFERENCES users(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE INDEX idx_users_email ON users(email);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -12,7 +12,6 @@ import {
   Tag,
   HeartPulse,
   Shield,
-  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchCatById } from '@/lib/api-client';

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Cat, AlertTriangle, HeartPulse, ShieldAlert, TrendingUp } from 'lucide-react';
+import { Cat, AlertTriangle, HeartPulse, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { fetchCats, fetchEmergencies, fetchPriorityFeed } from '@/lib/api-client';
