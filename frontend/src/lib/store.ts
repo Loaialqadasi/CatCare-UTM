@@ -12,8 +12,8 @@ interface AppState {
 
   // Navigation state
   currentView: AppView;
-  selectedCatId: string | null;
-  selectedEmergencyId: string | null;
+  selectedCatId: number | null;
+  selectedEmergencyId: number | null;
 
   // Sidebar state
   sidebarOpen: boolean;
@@ -26,8 +26,8 @@ interface AppState {
 
   // Navigation actions
   setCurrentView: (view: AppView) => void;
-  navigateToCatDetail: (catId: string) => void;
-  navigateToEmergencyDetail: (emergencyId: string) => void;
+  navigateToCatDetail: (catId: number) => void;
+  navigateToEmergencyDetail: (emergencyId: number) => void;
 
   // Sidebar actions
   toggleSidebar: () => void;

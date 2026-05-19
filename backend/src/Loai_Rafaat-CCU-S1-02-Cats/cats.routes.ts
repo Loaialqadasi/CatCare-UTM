@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -20,6 +20,56 @@ const mimeExtensionMap: Record<string, string> = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
   'image/webp': '.webp'
+};
+
+// Magic byte signatures for image types
+const MAGIC_BYTE_SIGNATURES: Record<string, Buffer> = {
+  'image/jpeg': Buffer.from([0xFF, 0xD8, 0xFF]),
+  'image/png': Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
+  'image/webp': Buffer.from([0x52, 0x49, 0x46, 0x46]), // RIFF header (covers WebP)
+};
+
+/**
+ * Validates the actual file content using magic bytes.
+ * Returns the detected MIME type or throws ValidationError.
+ */
+const validateFileMagicBytes = async (
+  filePath: string,
+  declaredMimetype: string
+): Promise<string> => {
+  const fd = await fs.promises.open(filePath, 'r');
+  try {
+    const buffer = Buffer.alloc(8);
+    await fd.read(buffer, 0, 8, 0);
+
+    for (const [mimeType, signature] of Object.entries(MAGIC_BYTE_SIGNATURES)) {
+      if (buffer.subarray(0, signature.length).equals(signature)) {
+        return mimeType;
+      }
+    }
+
+    throw new ValidationError(
+      `File content does not match declared type "${declaredMimetype}". Only JPEG, PNG, and WEBP images are allowed.`
+    );
+  } finally {
+    await fd.close();
+  }
+};
+
+// Middleware to validate magic bytes after multer saves the file
+const verifyCatPhotoMagicBytes = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (req.file) {
+      await validateFileMagicBytes(req.file.path, req.file.mimetype);
+    }
+    next();
+  } catch (error) {
+    // Clean up the uploaded file if validation fails
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    next(error);
+  }
 };
 
 // save uploads to disk with random filenames to prevent path traversal
@@ -53,11 +103,13 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
 });
 
-// create a cat — needs auth + optional photo upload
+// create a cat — any authenticated user (student, volunteer, admin) can create cat records
+  // M-5: This is intentional — students should be able to report campus cats they spot
 catsRoutes.post(
   '/',
   authMiddleware,
   upload.single('photo'),
+  verifyCatPhotoMagicBytes,
   validate({ body: createCatSchema }),
   catsController.create
 );

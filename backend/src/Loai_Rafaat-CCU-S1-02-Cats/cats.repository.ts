@@ -1,5 +1,4 @@
 import { db } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/database.js';
-import { DatabaseError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
 import { escapeLike } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/utils.js';
 import { Cat, CatHealthStatus, CreateCatInput } from './cats.types.js';
 

@@ -39,7 +39,7 @@ const ownershipLabels: Record<string, string> = {
 
 interface CatCardProps {
   cat: CatType;
-  onClick?: (catId: string) => void;
+  onClick?: (catId: number) => void;
 }
 
 export function CatCard({ cat, onClick }: CatCardProps) {

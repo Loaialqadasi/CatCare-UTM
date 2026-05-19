@@ -11,6 +11,8 @@ import {
 
 export const emergenciesRoutes = Router();
 
+// --- static routes (MUST be registered before parameterised routes) ---
+
 // report a new emergency — needs to be logged in
 emergenciesRoutes.post('/', authMiddleware, validate({ body: createEmergencySchema }), emergenciesController.create);
 
@@ -18,7 +20,12 @@ emergenciesRoutes.post('/', authMiddleware, validate({ body: createEmergencySche
 emergenciesRoutes.get('/', validate({ query: listEmergenciesQuerySchema }), emergenciesController.list);
 
 // priority feed — public, no auth needed
+// M-4: Static routes like /priority-feed MUST be registered before /:id.
+// Express matches routes in registration order — '/priority-feed' would be captured
+// by '/:id' (with id = "priority-feed") if registered after it.
 emergenciesRoutes.get('/priority-feed', emergenciesController.priorityFeed);
+
+// --- parameterised routes (must come after all static paths) ---
 
 // change an emergency's status (open → in_progress → resolved)
 emergenciesRoutes.patch(

@@ -4,7 +4,7 @@
 export type UserRole = 'student' | 'volunteer' | 'admin';
 
 export interface User {
-  id: string;
+  id: number;
   fullName: string;
   email: string;
   role: UserRole;
@@ -17,7 +17,7 @@ export type HealthStatus = 'healthy' | 'needs_attention' | 'injured' | 'unknown'
 export type OwnershipTag = 'stray' | 'adopted' | 'campus_managed' | 'unknown';
 
 export interface Cat {
-  id: string;
+  id: number;
   nickname: string;
   description: string;
   photoUrl: string;
@@ -26,7 +26,7 @@ export interface Cat {
   longitude: number;
   healthStatus: HealthStatus;
   ownershipTag: OwnershipTag;
-  createdByUserId: string;
+  createdByUserId: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,8 +37,8 @@ export type Priority = 'low' | 'medium' | 'high' | 'critical';
 export type EmergencyStatus = 'open' | 'in_progress' | 'resolved' | 'cancelled';
 
 export interface EmergencyReport {
-  id: string;
-  catId: string | null;
+  id: number;
+  catId: number | null;
   title: string;
   description: string;
   emergencyType: EmergencyType;
@@ -47,11 +47,11 @@ export interface EmergencyReport {
   locationName: string;
   latitude: number;
   longitude: number;
-  reportedByUserId: string;
+  reportedByUserId: number | null;
   createdAt: string;
   updatedAt: string;
   resolvedAt: string | null;
-  cat: { id: string; nickname: string } | null;
+  cat: { id: number; nickname: string } | null;
 }
 
 // --- api responses ---
@@ -90,7 +90,10 @@ export type AppView =
   | 'emergencies'
   | 'emergency-detail'
   | 'create-emergency'
-  | 'profile';
+  | 'profile'
+  | 'donations'
+  | 'create-donation'
+  | 'admin-donations';
 
 // --- form data ---
 export interface LoginFormData {
@@ -139,4 +142,54 @@ export interface EmergencyFilters {
   pageSize?: number;
   status?: EmergencyStatus | '';
   priority?: Priority | '';
+}
+
+// --- donations ---
+export type ReceiptStatus = 'pending' | 'approved' | 'rejected';
+
+export interface DonationReceipt {
+  hasReceipt: boolean;
+  receiptOriginalName: string | null;
+  receiptSizeBytes: number | null;
+  receiptStatus: ReceiptStatus;
+}
+
+export interface Donation {
+  id: number;
+  donorUserId: number | null;
+  donorName: string;
+  donorEmail: string;
+  amount: number;
+  currency: string;
+  message: string | null;
+  studentIdMasked: string | null;
+  volunteerIdMasked: string | null;
+  // Admin only — not present in regular responses
+  studentId?: string | null;
+  volunteerId?: string | null;
+  hasReceipt: boolean;
+  receiptOriginalName: string | null;
+  receiptSizeBytes: number | null;
+  receiptStatus: ReceiptStatus;
+  adminNotes: string | null;
+  reviewedByUserId: number | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDonationFormData {
+  donorName: string;
+  donorEmail: string;
+  amount: number;
+  currency: string;
+  message?: string;
+  studentId?: string;
+  volunteerId?: string;
+}
+
+export interface DonationFilters {
+  page?: number;
+  pageSize?: number;
+  status?: ReceiptStatus | '';
 }

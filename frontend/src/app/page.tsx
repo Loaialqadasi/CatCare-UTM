@@ -25,6 +25,10 @@ import { CreateEmergencyForm } from '@/components/emergencies/create-emergency-f
 
 import { UserProfile } from '@/components/profile/user-profile';
 
+import { DonationList } from '@/components/donations/donation-list';
+import { CreateDonationForm } from '@/components/donations/create-donation-form';
+import { AdminDonations } from '@/components/donations/admin-donations';
+
 function DashboardView() {
   return (
     <div className="space-y-6">
@@ -48,6 +52,7 @@ function AuthRouter({ view }: { view: AppView }) {
 }
 
 function AppRouter({ view }: { view: AppView }) {
+  const { user } = useAppStore();
   switch (view) {
     case 'dashboard':
       return <DashboardView />;
@@ -65,6 +70,13 @@ function AppRouter({ view }: { view: AppView }) {
       return <CreateEmergencyForm />;
     case 'profile':
       return <UserProfile />;
+    case 'donations':
+      return <DonationList />;
+    case 'create-donation':
+      return <CreateDonationForm />;
+    case 'admin-donations':
+      // Defence-in-depth: backend already enforces admin role, but guard here too
+      return user?.role === 'admin' ? <AdminDonations /> : <DashboardView />;
     default:
       return <DashboardView />;
   }
@@ -73,18 +85,22 @@ function AppRouter({ view }: { view: AppView }) {
 export default function Home() {
   const { currentView, isAuthenticated, sidebarOpen, setSidebarOpen, toggleSidebar } = useAppStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // M-3 fix: track whether we're on desktop via state (no SSR flash)
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   // on small screens the sidebar should never be collapsed
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) {
-        setSidebarCollapsed(false);
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    if (!isDesktop) {
+      setSidebarCollapsed(false);
+    }
+  }, [isDesktop]);
 
   const handleToggleCollapse = () => {
     setSidebarCollapsed((prev) => !prev);
@@ -105,7 +121,7 @@ export default function Home() {
 
       <div
         className="transition-all duration-300"
-        style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 ? (sidebarCollapsed ? '68px' : '240px') : '0' }}
+        className={isDesktop ? (sidebarCollapsed ? 'ml-[68px]' : 'ml-[240px]') : ''}
       >
         <Header onMenuClick={toggleSidebar} />
 

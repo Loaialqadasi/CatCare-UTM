@@ -13,6 +13,7 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  Heart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -58,6 +59,18 @@ const navItems: NavItem[] = [
     section: 'Actions',
   },
   {
+    id: 'donations',
+    label: 'Donations',
+    icon: <Heart className="h-5 w-5" />,
+    section: 'Donations',
+  },
+  {
+    id: 'create-donation',
+    label: 'Donate Now',
+    icon: <Plus className="h-5 w-5" />,
+    section: 'Donations',
+  },
+  {
     id: 'profile',
     label: 'Profile',
     icon: <User className="h-5 w-5" />,
@@ -72,9 +85,20 @@ function SidebarContent({
   collapsed: boolean;
   onNavigate: (view: AppView) => void;
 }) {
-  const { currentView } = useAppStore();
+  const { currentView, user } = useAppStore();
 
-  const sections = ['Main', 'Reports', 'Actions', 'Account'];
+  // Admins get an extra section to manage all donation receipts
+  const adminNavItems: NavItem[] = user?.role === 'admin' ? [
+    {
+      id: 'admin-donations',
+      label: 'Manage Receipts',
+      icon: <Heart className="h-5 w-5" />,
+      section: 'Admin',
+    },
+  ] : [];
+
+  const allNavItems = [...navItems, ...adminNavItems];
+  const sections = ['Main', 'Reports', 'Actions', 'Donations', ...(user?.role === 'admin' ? ['Admin'] : []), 'Account'];
 
   return (
     <div className="flex flex-col h-full">
@@ -97,7 +121,7 @@ function SidebarContent({
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
         {sections.map((section) => {
-          const sectionItems = navItems.filter((item) => item.section === section);
+          const sectionItems = allNavItems.filter((item) => item.section === section);
           if (sectionItems.length === 0) return null;
 
           return (

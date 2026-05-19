@@ -96,3 +96,72 @@ INSERT INTO emergency_reports (cat_id, title, description, emergency_type, prior
   (7, 'Ginger cat not eating', 'The orange cat near the mosque has not been eating for 2 days.', 'sickness', 'medium', 'open', 'UTM Mosque', 1.5598000, 103.6392000, 2),
   (NULL, 'Stray kitten at parking lot', 'Found a small kitten alone at the parking lot, looks very young.', 'danger', 'critical', 'open', 'UTM Parking Lot B', 1.5605000, 103.6405000, 2),
   (3, 'Kucing Tepi Jalan needs food', 'The black and white cat near main road seems underweight.', 'feeding_urgent', 'medium', 'resolved', 'UTM Main Road', 1.5595000, 103.6395000, 2);
+
+-- ─── Donations Table (SCRUM-30 / TG-1) ───
+-- receipt_status enum
+DO $$ BEGIN
+  CREATE TYPE receipt_status AS ENUM ('pending', 'approved', 'rejected');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DROP TABLE IF EXISTS donations CASCADE;
+
+CREATE TABLE donations (
+  id                      BIGSERIAL PRIMARY KEY,
+  donor_user_id           BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
+  donor_name              VARCHAR(120) NOT NULL,
+  donor_email             VARCHAR(160) NOT NULL,
+  amount                  NUMERIC(10, 2) NOT NULL CHECK (amount > 0),
+  currency                CHAR(3) NOT NULL DEFAULT 'MYR',
+  message                 TEXT NULL,
+  -- TG-1: IDs are AES-256-GCM encrypted — raw values are never stored
+  student_id_encrypted    TEXT NULL,
+  volunteer_id_encrypted  TEXT NULL,
+  student_id_hash         TEXT NULL,
+  volunteer_id_hash       TEXT NULL,
+  receipt_file_path       TEXT NULL,
+  receipt_original_name   VARCHAR(255) NULL,
+  receipt_mime_type       VARCHAR(100) NULL,
+  receipt_size_bytes      INTEGER NULL,
+  receipt_status          receipt_status NOT NULL DEFAULT 'pending',
+  admin_notes             TEXT NULL,
+  reviewed_by_user_id     BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at             TIMESTAMPTZ NULL,
+  created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_donations_receipt_status    ON donations (receipt_status);
+CREATE INDEX idx_donations_created_at        ON donations (created_at);
+CREATE INDEX idx_donations_donor_user_id     ON donations (donor_user_id);
+CREATE INDEX idx_donations_student_id_hash   ON donations (student_id_hash)   WHERE student_id_hash IS NOT NULL;
+CREATE INDEX idx_donations_volunteer_id_hash ON donations (volunteer_id_hash) WHERE volunteer_id_hash IS NOT NULL;
+
+
+
+-- ─── Auto-update updated_at trigger (M-8) ───
+-- Automatically sets updated_at = NOW() on every row update,
+-- so ad-hoc UPDATE queries that forget to set it manually still get correct timestamps.
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_cats_updated_at
+  BEFORE UPDATE ON cats
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_emergency_reports_updated_at
+  BEFORE UPDATE ON emergency_reports
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_donations_updated_at
+  BEFORE UPDATE ON donations
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();

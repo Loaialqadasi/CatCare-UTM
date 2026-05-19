@@ -14,8 +14,8 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 export function LoginForm() {
-  const [email, setEmail] = useState('admin@utm.my');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -91,6 +91,7 @@ export function LoginForm() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
                     disabled={loading}
+                    autoComplete="email"
                   />
                 </div>
               </div>
@@ -107,6 +108,7 @@ export function LoginForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10"
                     disabled={loading}
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
@@ -145,12 +147,14 @@ export function LoginForm() {
               </div>
             </form>
 
-            {/* Demo hint */}
-            <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
-              <p className="text-xs text-amber-700 text-center">
-                <span className="font-semibold">Demo Accounts:</span> Admin — admin@utm.my / password123  |  Student — student@graduate.utm.my / password123
-            </p>
-          </div>
+            {/* Demo hint — only shown in development builds */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <p className="text-xs text-amber-700 text-center">
+                  <span className="font-semibold">Demo Accounts:</span> Admin — admin@utm.my / password123  |  Student — student@graduate.utm.my / password123
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>

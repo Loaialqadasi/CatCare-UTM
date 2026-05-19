@@ -13,11 +13,14 @@ import type {
   CatFilters,
   EmergencyFilters,
   EmergencyStatus,
+  Donation,
+  CreateDonationFormData,
+  DonationFilters,
 } from './types';
 import { demoUser, demoCats, demoEmergencies } from './mock-data';
 
 const API_BASE = 'https://catcare-backend.onrender.com/api';
-const BACKEND_AVAILABLE = true; // flip this to true once the backend API is live
+const BACKEND_AVAILABLE = process.env.NEXT_PUBLIC_BACKEND_AVAILABLE !== 'false';
 
 const UTM_EMAIL_DOMAINS = ['@utm.my', '@graduate.utm.my'];
 
@@ -74,7 +77,7 @@ export async function register(data: RegisterFormData): Promise<{ user: User; to
     throw new Error('Please use a valid UTM email (e.g. your.name@utm.my or your.name@graduate.utm.my)');
   }
   const newUser: User = {
-    id: `user-${Date.now()}`,
+    id: Math.floor(Date.now() / 1000),
     fullName: data.fullName,
     email: data.email,
     role: 'student',
@@ -148,7 +151,7 @@ export async function fetchCats(
   return { items, pagination: { page, pageSize, totalItems, totalPages } };
 }
 
-export async function fetchCatById(id: string, _token?: string): Promise<Cat> {
+export async function fetchCatById(id: number, _token?: string): Promise<Cat> {
   if (BACKEND_AVAILABLE) {
     const res = await fetch(`${API_BASE}/cats/${id}`, {
       headers: { Authorization: `Bearer ${_token}` },
@@ -160,7 +163,7 @@ export async function fetchCatById(id: string, _token?: string): Promise<Cat> {
 
   // using demo data
   await delay(400);
-  const cat = demoCats.find((c) => c.id === id);
+  const cat = demoCats.find((c) => c.id === Number(id));
   if (!cat) throw new Error('Cat not found');
   return cat;
 }
@@ -189,7 +192,7 @@ export async function createCat(
   // using demo data
   await delay(1000);
   const newCat: Cat = {
-    id: `cat-${Date.now()}`,
+    id: Math.floor(Date.now() / 1000),
     nickname: data.nickname,
     description: data.description,
     photoUrl: data.photoUrl || 'https://placecats.com/millie/400/300',
@@ -198,7 +201,7 @@ export async function createCat(
     longitude: data.longitude,
     healthStatus: data.healthStatus,
     ownershipTag: data.ownershipTag,
-    createdByUserId: 'user-001',
+    createdByUserId: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -250,7 +253,7 @@ export async function fetchEmergencies(
 }
 
 export async function fetchEmergencyById(
-  id: string,
+  id: number,
   _token?: string
 ): Promise<EmergencyReport> {
   if (BACKEND_AVAILABLE) {
@@ -264,7 +267,7 @@ export async function fetchEmergencyById(
 
   // using demo data
   await delay(400);
-  const emergency = demoEmergencies.find((e) => e.id === id);
+  const emergency = demoEmergencies.find((e) => e.id === Number(id));
   if (!emergency) throw new Error('Emergency report not found');
   return emergency;
 }
@@ -312,9 +315,9 @@ export async function createEmergency(
 
   // using demo data
   await delay(1000);
-  const cat = data.catId ? demoCats.find((c) => c.id === data.catId) : null;
+  const cat = data.catId ? demoCats.find((c) => c.id === Number(data.catId)) : null;
   const newEmergency: EmergencyReport = {
-    id: `emg-${Date.now()}`,
+    id: Math.floor(Date.now() / 1000),
     catId: data.catId || null,
     title: data.title,
     description: data.description,
@@ -324,7 +327,7 @@ export async function createEmergency(
     locationName: data.locationName,
     latitude: data.latitude,
     longitude: data.longitude,
-    reportedByUserId: 'user-001',
+    reportedByUserId: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     resolvedAt: null,
@@ -355,7 +358,7 @@ export async function updateEmergencyStatus(
 
   // using demo data
   await delay(500);
-  const emergency = demoEmergencies.find((e) => e.id === id);
+  const emergency = demoEmergencies.find((e) => e.id === Number(id));
   if (!emergency) throw new Error('Emergency not found');
   emergency.status = status;
   emergency.updatedAt = new Date().toISOString();
@@ -364,3 +367,139 @@ export async function updateEmergencyStatus(
   }
   return { ...emergency };
 }
+
+// --- donations ---
+
+export async function createDonation(
+  data: CreateDonationFormData,
+  receiptFile: File | null,
+  token?: string
+): Promise<Donation> {
+  if (BACKEND_AVAILABLE) {
+    // Use FormData because we're sending a file alongside JSON fields
+    const form = new FormData();
+    form.append('donorName', data.donorName);
+    form.append('donorEmail', data.donorEmail);
+    form.append('amount', String(data.amount));
+    form.append('currency', data.currency || 'MYR');
+    if (data.message)     form.append('message', data.message);
+    if (data.studentId)   form.append('studentId', data.studentId);
+    if (data.volunteerId) form.append('volunteerId', data.volunteerId);
+    if (receiptFile)      form.append('receipt', receiptFile);
+
+    const res = await fetch(`${API_BASE}/donations`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error?.message || 'Failed to submit donation');
+    return json.data;
+  }
+
+  // Demo fallback
+  await delay(1200);
+  return {
+    id: Math.floor(Date.now() / 1000),
+    donorUserId: null,
+    donorName: data.donorName,
+    donorEmail: data.donorEmail,
+    amount: data.amount,
+    currency: data.currency || 'MYR',
+    message: data.message || null,
+    studentIdMasked: data.studentId ? `${data.studentId.slice(0,3)}****${data.studentId.slice(-2)}` : null,
+    volunteerIdMasked: data.volunteerId ? `${data.volunteerId.slice(0,3)}****${data.volunteerId.slice(-2)}` : null,
+    hasReceipt: !!receiptFile,
+    receiptOriginalName: receiptFile?.name || null,
+    receiptSizeBytes: receiptFile?.size || null,
+    receiptStatus: 'pending' as const,
+    adminNotes: null,
+    reviewedByUserId: null,
+    reviewedAt: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export async function fetchDonations(
+  filters: DonationFilters = {},
+  token?: string
+): Promise<PaginatedResponse<Donation>> {
+  if (BACKEND_AVAILABLE) {
+    const params = new URLSearchParams();
+    if (filters.page)     params.set('page', String(filters.page));
+    if (filters.pageSize) params.set('pageSize', String(filters.pageSize));
+    if (filters.status)   params.set('status', filters.status);
+
+    const res = await fetch(`${API_BASE}/donations?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error?.message || 'Failed to load donations');
+    return json.data;
+  }
+
+  await delay(600);
+  return { items: [], pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 } };
+}
+
+export async function reviewDonationReceipt(
+  donationId: string,
+  status: 'approved' | 'rejected',
+  adminNotes: string,
+  token?: string
+): Promise<Donation> {
+  if (BACKEND_AVAILABLE) {
+    const res = await fetch(`${API_BASE}/donations/${donationId}/review`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status, adminNotes }),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error?.message || 'Failed to review receipt');
+    return json.data;
+  }
+
+  await delay(700);
+  throw new Error('Review requires the real backend to be running');
+}
+
+// Admin: search donations by student ID using hash-based lookup (TG-1 compliant)
+// The backend hashes the query before comparing — the plaintext never hits the DB.
+export async function searchDonationsByStudentId(
+  studentId: string,
+  token?: string
+): Promise<Donation[]> {
+  if (BACKEND_AVAILABLE) {
+    const params = new URLSearchParams({ studentId });
+    const res = await fetch(`${API_BASE}/donations/search/student?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error?.message || 'Search failed');
+    return json.data;
+  }
+
+  await delay(400);
+  return []; // no mock data for admin search
+}
+
+// Admin: search donations by volunteer ID using hash-based lookup (TG-1 compliant)
+export async function searchDonationsByVolunteerId(
+  volunteerId: string,
+  token?: string
+): Promise<Donation[]> {
+  if (BACKEND_AVAILABLE) {
+    const params = new URLSearchParams({ volunteerId });
+    const res = await fetch(`${API_BASE}/donations/search/volunteer?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error?.message || 'Search failed');
+    return json.data;
+  }
+
+  await delay(400);
+  return []; // no mock data for admin search
+}
+

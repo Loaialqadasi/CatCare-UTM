@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthenticationError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
+import { AuthenticationError, AuthorizationError, NotFoundError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
 import { success } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/response.js';
 import { emergenciesService } from './emergencies.service.js';
 import { CreateEmergencyInput, EmergencyListQuery, UpdateEmergencyStatusInput } from './emergencies.types.js';
@@ -53,7 +53,24 @@ export const emergenciesController = {
 
   async updateStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (!req.user) {
+        throw new AuthenticationError('Missing or invalid token');
+      }
+
+      // H-2 fix: only admin or volunteer roles (or the original reporter) can change status
       const id = Number(req.params.id);
+      const emergency = await emergenciesService.getEmergencyById(id);
+      if (!emergency) {
+        throw new NotFoundError('Emergency report not found');
+      }
+
+      const isReporter = emergency.reportedByUserId === req.user.id;
+      const isAdminOrVolunteer = req.user.role === 'admin' || req.user.role === 'volunteer';
+
+      if (!isAdminOrVolunteer && !isReporter) {
+        throw new AuthorizationError('Only admins, volunteers, or the original reporter can change emergency status');
+      }
+
       const payload = req.body as UpdateEmergencyStatusInput;
       const report = await emergenciesService.updateStatus(id, payload.status);
       success(res, report);

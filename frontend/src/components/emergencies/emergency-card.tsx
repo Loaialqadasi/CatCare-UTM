@@ -66,7 +66,7 @@ function formatTimeAgo(dateStr: string): string {
 
 interface EmergencyCardProps {
   emergency: EmergencyReport;
-  onClick?: (emergencyId: string) => void;
+  onClick?: (emergencyId: number) => void;
 }
 
 export function EmergencyCard({ emergency, onClick }: EmergencyCardProps) {

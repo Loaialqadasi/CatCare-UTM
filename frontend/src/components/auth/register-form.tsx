@@ -36,8 +36,12 @@ export function RegisterForm() {
       toast.error('Please use a valid UTM email (e.g. your.name@utm.my or your.name@graduate.utm.my)');
       return false;
     }
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return false;
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]/.test(password)) {
+      toast.error('Password must contain at least one special character (!@#$%^&*...)');
       return false;
     }
     if (password !== confirmPassword) {
@@ -119,6 +123,7 @@ export function RegisterForm() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
                     disabled={loading}
+                    autoComplete="email"
                   />
                 </div>
               </div>
@@ -130,11 +135,12 @@ export function RegisterForm() {
                   <Input
                     id="reg-password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Min 6 characters"
+                    placeholder="Min 8 chars, 1 special char"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10"
                     disabled={loading}
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -159,6 +165,7 @@ export function RegisterForm() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="pl-10"
                     disabled={loading}
+                    autoComplete="new-password"
                   />
                 </div>
               </div>

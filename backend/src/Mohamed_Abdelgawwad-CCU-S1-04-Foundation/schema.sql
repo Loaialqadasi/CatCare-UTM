@@ -64,3 +64,32 @@ CREATE INDEX idx_emergency_reports_status ON emergency_reports (status);
 CREATE INDEX idx_emergency_reports_priority ON emergency_reports (priority);
 CREATE INDEX idx_emergency_reports_created_at ON emergency_reports (created_at);
 CREATE INDEX idx_emergency_reports_cat_id ON emergency_reports (cat_id);
+
+
+
+-- ─── Auto-update updated_at trigger (M-8) ───
+-- Automatically sets updated_at = NOW() on every row update,
+-- so ad-hoc UPDATE queries that forget to set it manually still get correct timestamps.
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_users_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_cats_updated_at
+  BEFORE UPDATE ON cats
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_emergency_reports_updated_at
+  BEFORE UPDATE ON emergency_reports
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_donations_updated_at
+  BEFORE UPDATE ON donations
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
