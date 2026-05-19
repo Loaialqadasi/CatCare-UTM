@@ -1,82 +1,114 @@
-﻿# ­ƒÉ¥ CatCare UTM | SCRUM-27
+# CatCare UTM — Campus Cat Management System
 
-## Feature: Donation Receipt Upload Workflow ­ƒÆ©
+A comprehensive web application for managing campus cats and emergency reports at Universiti Teknologi Malaysia (UTM).
 
-![Status](https://img.shields.io/badge/Status-In%20Progress-orange)
-![Module](https://img.shields.io/badge/Module-Fundraising-blue)
-![Platform](https://img.shields.io/badge/Platform-Flutter-02569B)
+## Team Members
 
----
+| Member | Module | Folder |
+|--------|--------|--------|
+| Layth Amgad | CCU-S1-01: Authentication | `backend/src/Layth_Amgad-CCU-S1-01-Auth/` |
+| Loai Rafaat | CCU-S1-02: Cat Management | `backend/src/Loai_Rafaat-CCU-S1-02-Cats/` |
+| Youssef Mostafa | CCU-S1-03: Emergency Reports | `backend/src/Youssef_Mostafa-CCU-S1-03-Emergencies/` |
+| Mohamed Abdelgawwad | CCU-S1-04: Foundation | `backend/src/Mohamed_Abdelgawwad-CCU-S1-04-Foundation/` + `frontend/src/lib/`, `frontend/src/components/` |
 
-## ­ƒôû Overview
+## Project Structure
 
-The Donation Receipt Upload Workflow enables student donors to securely submit proof of payment for fundraising contributions. This module streamlines donation verification while improving transparency, traceability, and user experience within the CatCare UTM ecosystem.
-
-The workflow supports receipt capture through both camera and gallery sources, integrates cloud-based image storage, and ensures secure transaction handling with frontend validation and asynchronous processing.
-
----
-
-## ­ƒÜÇ Core Features
-
-* Receipt upload via Camera or Gallery
-* Real-time image preview before submission
-* Secure cloud image synchronization
-* Form validation and numeric sanitization
-* Duplicate-submit prevention using loading states
-* Automatic redirection to confirmation screen after successful upload
-
----
-
-## ­ƒøá Technical Architecture
-
-### Frontend
-
-* Flutter form-based UI implementation
-* `image_picker` integration for native device access
-* Dynamic image preview rendering
-* Circular loading indicator during upload lifecycle
-
-### Backend
-
-* REST API endpoint:
-
-```http
-POST /api/donations/upload
+```
+catcare-utm/
+├── backend/                 # Express.js + TypeScript + PostgreSQL
+│   ├── src/
+│   │   ├── Layth_Amgad-CCU-S1-01-Auth/       # Auth (login, register, JWT)
+│   │   ├── Loai_Rafaat-CCU-S1-02-Cats/        # Cat CRUD + photo upload
+│   │   ├── Youssef_Mostafa-CCU-S1-03-Emergencies/ # Emergency reports
+│   │   ├── Mohamed_Abdelgawwad-CCU-S1-04-Foundation/ # Shared (DB, env, errors, middleware)
+│   │   └── server.ts
+│   ├── catcare-full-setup.sql
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── frontend/                # Next.js 16 + TypeScript + Tailwind CSS + shadcn/ui
+│   ├── src/
+│   │   ├── app/             # Next.js App Router
+│   │   ├── components/      # UI components (auth, layout, cats, emergencies, dashboard, profile)
+│   │   ├── hooks/           # Custom React hooks
+│   │   └── lib/             # API client, store, types, mock data
+│   ├── public/              # Static assets (logo.svg)
+│   ├── package.json
+│   └── next.config.ts
+│
+└── README.md
 ```
 
-* Cloud Storage integration for receipt persistence
-* Metadata synchronization:
+## Tech Stack
 
-  * `userId`
-  * `amount`
-  * `timestamp`
-  * `imageURL`
+### Backend
+- **Runtime:** Node.js + TypeScript
+- **Framework:** Express.js
+- **Database:** PostgreSQL (Render)
+- **Auth:** JWT + bcrypt
+- **Validation:** Zod
+- **Logging:** Pino
+- **Security:** Helmet, CORS, Rate Limiting
 
-### Validation & Safety
+### Frontend
+- **Framework:** Next.js 16 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS + shadcn/ui
+- **State Management:** Zustand
+- **Animations:** Framer Motion
+- **HTTP Client:** Native fetch
+- **Notifications:** Sonner
 
-* File extension whitelist:
+## Demo Accounts
 
-  * `.jpg`
-  * `.jpeg`
-  * `.png`
-* Maximum upload size: `5MB`
-* Null safety checks for cancelled image selection
-* Input sanitization for amount fields
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@utm.my | password123 |
+| Student | student@graduate.utm.my | password123 |
 
----
+## Deployment
 
-## Ô£à Acceptance Criteria
+### Backend (Render)
+- **URL:** https://catcare-backend.onrender.com
+- **Database:** Render PostgreSQL (Free Tier)
+- **Build Command:** `npm install --include-dev && npm run build`
+- **Start Command:** `node dist/server.js`
 
-* [ ] User can capture or select a receipt image
-* [ ] System validates file type and upload size
-* [ ] Image preview is displayed before submission
-* [ ] Upload process shows loading feedback
-* [ ] Empty or invalid amounts are rejected
-* [ ] Unique transaction record is generated
-* [ ] User is redirected after successful upload
+### Frontend (Vercel)
+- **URL:** https://catcare-frontend-inky.vercel.app
+- **Framework Preset:** Next.js
+- **Connected to:** GitHub repo
 
----
+## Getting Started
 
-## ­ƒôî Assigned Developer
+### Backend
+```bash
+cd backend
+npm install
+cp .env.example .env   # fill in your database credentials
+npm run dev
+```
 
-**PIC:** @YoussefBadr
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | /api/health | No | Health check |
+| POST | /api/auth/register | No | Register new user |
+| POST | /api/auth/login | No | Login |
+| GET | /api/auth/me | Yes | Get current user |
+| GET | /api/cats | No | List cats (paginated) |
+| GET | /api/cats/:id | No | Get cat by ID |
+| POST | /api/cats | Yes | Create cat (with photo upload) |
+| GET | /api/emergencies | No | List emergencies (paginated) |
+| GET | /api/emergencies/:id | No | Get emergency by ID |
+| POST | /api/emergencies | Yes | Report emergency |
+| PATCH | /api/emergencies/:id/status | Yes | Update emergency status |
+| GET | /api/emergencies/priority-feed | No | Priority-sorted emergencies |
