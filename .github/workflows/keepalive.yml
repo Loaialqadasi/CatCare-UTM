@@ -1,0 +1,14 @@
+name: Keep-Alive Ping
+
+on:
+  schedule:
+    # MED-1 Fix: Ping every 14 minutes to prevent Render cold starts
+    - cron: '*/14 * * * *'
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          curl -fsS https://catcare-backend.onrender.com/api/health || exit 1
