@@ -1,0 +1,25 @@
+=============================================================
+  MOHAMED — frontend-member-1
+  Branch: frontend-member-1
+=============================================================
+
+STEP 1 — Clone repo and create your branch:
+  git clone https://github.com/YOUR_ORG/CatCare-UTM.git
+  cd CatCare-UTM
+  git checkout -b frontend-member-1
+
+STEP 2 — Unzip this file INTO the root of the cloned repo:
+
+  On Mac/Linux:
+    unzip Mohamed-frontend-member-1.zip -d .
+
+  On Windows:
+    Extract here (make sure paths merge, not nest)
+
+STEP 3 — Stage, commit, and push:
+  git add .
+  git commit -m "feat(frontend/layout): Mohamed Abdelgawwad — layout, auth UI, shared lib, routing"
+  git push origin frontend-member-1
+
+Do NOT touch any files outside the folders already in this zip.
+=============================================================
