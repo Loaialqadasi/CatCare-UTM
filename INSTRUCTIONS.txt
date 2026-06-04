@@ -1,26 +1,31 @@
 =============================================================
-  LAYTH — backend-member-1
-  Branch: backend-member-1
+
+=======
+  LOAI — backend-member-2
+  Branch: backend-member-2
 =============================================================
 
-STEP 1 — Make sure you have the repo cloned and branch created:
+STEP 1 — Clone repo and create your branch:
   git clone https://github.com/YOUR_ORG/CatCare-UTM.git
   cd CatCare-UTM
-  git checkout -b backend-member-1
+  git checkout -b backend-member-2
 
 STEP 2 — Unzip this file INTO the root of the cloned repo:
-  (so that backend/ and .github/ drop directly into the project root)
 
   On Mac/Linux:
-    unzip Layth-backend-member-1.zip -d .
+    unzip Loai-backend-member-2.zip -d .
+>>>>>>> loai-sprint3
 
   On Windows:
     Extract here (make sure paths merge, not nest)
 
 STEP 3 — Stage, commit, and push:
   git add .
-  git commit -m "feat(backend/auth+donations): Layth Amgad — auth module, donations module, CI pipeline"
-  git push origin backend-member-1
 
-That's it! Your branch is live. Do NOT touch any other files.
+=======
+  git commit -m "feat(backend/cats+emergencies): Loai Rafaat — cats, emergencies, foundation, map"
+  git push origin backend-member-2
+
+Do NOT touch any files outside the folders already in this zip.
+>>>>>>> loai-sprint3
 =============================================================
