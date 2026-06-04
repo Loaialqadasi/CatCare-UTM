@@ -5,6 +5,7 @@ export interface User {
   fullName: string;
   email: string;
   role: UserRole;
+  emailVerified: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,9 +30,24 @@ export interface CreateUserInput {
   email: string;
   passwordHash: string;
   role: UserRole;
+  emailVerified?: boolean;
 }
 
 export interface AuthResult {
   user: User;
+  token: string;
+  refreshToken: string;
+}
+
+export interface ForgotPasswordResult {
+  message: string;
+  token?: string; // Only included in development for testing
+}
+
+export interface ResetPasswordResult {
+  message: string;
+}
+
+export interface RefreshTokenResult {
   token: string;
 }

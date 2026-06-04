@@ -39,7 +39,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, { message: 'Password is required' })
 });
 
-// MED-9: Password reset schemas (skeleton — email sending not yet configured)
+// MED-9: Password reset schemas
 export const forgotPasswordSchema = z.object({
   email: emailSchema,
 });
@@ -47,4 +47,9 @@ export const forgotPasswordSchema = z.object({
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Reset token is required'),
   password: passwordSchema,
+});
+
+// Refresh token schema
+export const refreshTokenSchema = z.object({
+  // Empty — token comes from cookie
 });

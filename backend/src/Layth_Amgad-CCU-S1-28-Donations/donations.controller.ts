@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthenticationError, AuthorizationError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
 import { success } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/response.js';
+import { uploadToCloudinary } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/upload.js';
 import { donationsService } from './donations.service.js';
 import { CreateDonationInput, DonationListQuery } from './donations.types.js';
 
@@ -10,9 +11,21 @@ export const donationsController = {
       if (!req.user) {
         throw new AuthenticationError('Missing or invalid token');
       }
-      const payload = req.body as Omit<CreateDonationInput, 'donorUserId'>;
+      const { donorName, donorEmail, amount, note, receiptUrl: bodyReceiptUrl } = req.body as CreateDonationInput;
+      let receiptUrl: string | null = bodyReceiptUrl ?? null;
+
+      // If a receipt file was uploaded, send it to Cloudinary and get the URL
+      if (req.file) {
+        const result = await uploadToCloudinary(req.file.buffer, 'catcare-utm/receipts');
+        receiptUrl = result.url;
+      }
+
       const donation = await donationsService.createDonation({
-        ...payload,
+        donorName,
+        donorEmail,
+        amount,
+        note,
+        receiptUrl,
         donorUserId: req.user.id
       });
       success(res, donation, 201);
