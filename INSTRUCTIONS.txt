@@ -1,0 +1,25 @@
+=============================================================
+  LOAI — backend-member-2
+  Branch: backend-member-2
+=============================================================
+
+STEP 1 — Clone repo and create your branch:
+  git clone https://github.com/YOUR_ORG/CatCare-UTM.git
+  cd CatCare-UTM
+  git checkout -b backend-member-2
+
+STEP 2 — Unzip this file INTO the root of the cloned repo:
+
+  On Mac/Linux:
+    unzip Loai-backend-member-2.zip -d .
+
+  On Windows:
+    Extract here (make sure paths merge, not nest)
+
+STEP 3 — Stage, commit, and push:
+  git add .
+  git commit -m "feat(backend/cats+emergencies): Loai Rafaat — cats, emergencies, foundation, map"
+  git push origin backend-member-2
+
+Do NOT touch any files outside the folders already in this zip.
+=============================================================
