@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { validate } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/validate.middleware.js';
 import { authMiddleware } from '../Layth_Amgad-CCU-S1-01-Auth/auth.middleware.js';
 import { adminMiddleware } from './admin.middleware.js';
@@ -12,10 +13,17 @@ import {
 
 export const donationsRoutes = Router();
 
-// submit a new donation — needs auth
+// Multer for receipt uploads — allows images and PDFs
+const receiptUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+});
+
+// submit a new donation — needs auth, optional receipt file
 donationsRoutes.post(
   '/',
   authMiddleware,
+  receiptUpload.single('receipt'),
   validate({ body: createDonationSchema }),
   donationsController.create
 );

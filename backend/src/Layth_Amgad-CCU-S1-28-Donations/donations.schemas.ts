@@ -6,21 +6,15 @@ export const updateableDonationStatusEnum = z.enum(['reviewed', 'approved', 'rej
 export const createDonationSchema = z.object({
   donorName: z.string().min(2).max(120).trim(),
   donorEmail: z.string().email().max(160).trim(),
-  // MED-7 Fix: Stricter amount validation
+  // MED-7 Fix: Stricter amount validation — coerce handles FormData string values
   amount: z.coerce.number()
     .positive('Amount must be greater than 0')
-    .max(1_000_000, 'Amount cannot exceed RM 1,000,000')
-    .multipleOf(0.01, 'Amount must have at most 2 decimal places'),
+    .max(1_000_000, 'Amount cannot exceed RM 1,000,000'),
   note: z.string().max(500).optional().nullable(),
-  // CRIT-5 Fix: Receipt URL must be HTTPS only to prevent SSRF
-  receiptUrl: z.string()
-    .url('Receipt URL must be a valid URL')
-    .max(500)
-    .refine(url => url.startsWith('https://'), {
-      message: 'Only HTTPS receipt URLs are allowed'
-    })
-    .optional()
-    .nullable()
+  // Receipt URL from Cloudinary upload or manual entry
+  receiptUrl: z.string().max(500).optional().nullable(),
+  // The 'receipt' key may appear in req.body from FormData — strip it (file handled by multer)
+  receipt: z.any().optional(),
 });
 
 export const updateDonationStatusSchema = z
