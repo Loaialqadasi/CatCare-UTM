@@ -25,6 +25,7 @@ import {
   updateEmergencyStatus,
 } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
+import { useAppStore } from '@/lib/store';
 import type { EmergencyReport, Priority, EmergencyStatus } from '@/lib/types';
 import { toast } from 'sonner';
 
@@ -107,6 +108,10 @@ export function EmergencyDetail({ emergencyId }: EmergencyDetailProps) {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const router = useRouter();
+  const { user } = useAppStore();
+
+  // H-12 FIX: Only admin/manager users can change emergency status
+  const canUpdateStatus = user?.role === 'admin' || user?.role === 'manager';
 
   useEffect(() => {
     if (!emergencyId) return;
@@ -293,8 +298,8 @@ export function EmergencyDetail({ emergencyId }: EmergencyDetailProps) {
         </CardContent>
       </Card>
 
-      {/* Status Actions */}
-      {isActive && (
+      {/* Status Actions — H-12 FIX: Only admin/manager can update status */}
+      {isActive && canUpdateStatus && (
         <Card className="rounded-xl border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Update Status</CardTitle>

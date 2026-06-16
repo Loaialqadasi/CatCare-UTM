@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 import { fetchCatById, fetchCareHistory } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import type { Cat, HealthStatus, OwnershipTag, CareHistoryEntry, CareType } from '@/lib/types';
 
 
@@ -143,12 +144,15 @@ export function CatDetail({ catId }: CatDetailProps) {
         <div className="lg:col-span-2">
           <Card className="rounded-xl overflow-hidden border-border/50">
             <div className="aspect-square relative bg-muted">
-              <img
+              <Image
                 src={cat.photoUrl || 'https://placecats.com/millie/400/300'}
                 alt={cat.nickname}
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 1024px) 100vw, 40vw"
+                className="object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://placecats.com/millie/400/300';
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'https://placecats.com/millie/400/300';
                 }}
               />
             </div>

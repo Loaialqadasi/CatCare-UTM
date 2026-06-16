@@ -5,6 +5,7 @@
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { MapPin } from 'lucide-react';
+import Image from 'next/image';
 import type { Cat as CatType, HealthStatus } from '@/lib/types';
 
 const healthConfig: Record<HealthStatus, { color: string; bgColor: string; label: string }> = {
@@ -51,12 +52,16 @@ export function CatCard({ cat, onClick }: CatCardProps) {
       className="w-full text-left rounded-xl border border-border/50 overflow-hidden hover:shadow-lg transition-all duration-300 group bg-card"
     >
       <div className="aspect-[4/3] relative overflow-hidden bg-muted">
-        <img
+        <Image
           src={cat.photoUrl || 'https://placecats.com/millie/400/300'}
           alt={cat.nickname}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://placecats.com/millie/400/300';
+            // Replace with fallback on error
+            const target = e.target as HTMLImageElement;
+            target.src = 'https://placecats.com/millie/400/300';
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />

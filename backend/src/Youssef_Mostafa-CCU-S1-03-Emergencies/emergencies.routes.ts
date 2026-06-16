@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware } from '../Layth_Amgad-CCU-S1-01-Auth/auth.middleware.js';
 import { adminMiddleware } from '../Layth_Amgad-CCU-S1-28-Donations/admin.middleware.js';
+import { csrfProtection } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/csrf.js';
 import { validate } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/validate.middleware.js';
 import { emergenciesController } from './emergencies.controller.js';
 import {
@@ -12,7 +13,7 @@ import {
 
 export const emergenciesRoutes = Router();
 
-// report a new emergency — needs to be logged in
+// report a new emergency — needs to be logged in (CSRF already applied globally on /api/emergencies)
 emergenciesRoutes.post('/', authMiddleware, validate({ body: createEmergencySchema }), emergenciesController.create);
 
 // browse all emergencies with filters
@@ -22,7 +23,7 @@ emergenciesRoutes.get('/', validate({ query: listEmergenciesQuerySchema }), emer
 emergenciesRoutes.get('/priority-feed', emergenciesController.priorityFeed);
 
 // MED-08 Fix: Change emergency status — now requires admin role
-// Only admins (and volunteers with proper role) should change emergency status
+// Only admins (and managers with proper role) should change emergency status
 emergenciesRoutes.patch(
   '/:id/status',
   authMiddleware,
@@ -34,20 +35,22 @@ emergenciesRoutes.patch(
 // view a single emergency
 emergenciesRoutes.get('/:id', validate({ params: emergencyIdParamSchema }), emergenciesController.getById);
 
-// soft delete an emergency — admin only
+// soft delete an emergency — admin only (CSRF protected)
 emergenciesRoutes.delete(
   '/:id',
   authMiddleware,
   adminMiddleware,
+  csrfProtection,
   validate({ params: emergencyIdParamSchema }),
   emergenciesController.softDelete
 );
 
-// restore a soft-deleted emergency — admin only
+// restore a soft-deleted emergency — admin only (CSRF protected)
 emergenciesRoutes.patch(
   '/:id/restore',
   authMiddleware,
   adminMiddleware,
+  csrfProtection,
   validate({ params: emergencyIdParamSchema }),
   emergenciesController.restore
 );
