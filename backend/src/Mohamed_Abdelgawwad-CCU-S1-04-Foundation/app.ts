@@ -9,8 +9,9 @@ import { logger } from './logger.js';
 import { success } from './response.js';
 import { errorHandler } from './error.middleware.js';
 import { notFoundHandler } from './not-found.middleware.js';
-import { generateCsrfToken, csrfProtection } from './csrf.js';
+import { generateCsrfToken, csrfProtection, ensureSessionCookie } from './csrf.js';
 import { authRoutes } from '../Layth_Amgad-CCU-S1-01-Auth/auth.routes.js';
+import { optionalAuthMiddleware } from '../Layth_Amgad-CCU-S1-01-Auth/auth.middleware.js';
 import { catsRoutes } from '../Loai_Rafaat-CCU-S1-02-Cats/cats.routes.js';
 import { emergenciesRoutes } from '../Youssef_Mostafa-CCU-S1-03-Emergencies/emergencies.routes.js';
 import { donationsRoutes } from '../Layth_Amgad-CCU-S1-28-Donations/donations.routes.js';
@@ -58,8 +59,10 @@ app.use(
       // Allow requests with no origin (mobile apps, curl, server-side)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
-      // Also allow Vercel preview deployments
-      if (origin.match(/\.vercel\.app$/)) return callback(null, true);
+      // H-4 FIX: Only allow Vercel preview deployments from the project's specific subdomain
+      // Previously: any *.vercel.app was allowed — this was too permissive.
+      // Now: only allow the specific CatCare Vercel deployment domains
+      if (origin.match(/catcare-utm.*\.vercel\.app$/)) return callback(null, true);
       callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -121,8 +124,15 @@ app.get('/api/health/storage', async (_req, res) => {
 });
 
 // CRIT-4: CSRF token endpoint — frontend calls this to obtain a token
-app.get('/api/csrf-token', (req, res) => {
+// C-2 FIX: Also ensure the per-browser session ID cookie is set
+// IMPORTANT: optionalAuthMiddleware sets req.user if a valid JWT cookie exists,
+// so the CSRF token is generated with the user's ID as the session identifier.
+// This matches the identifier used when CSRF is validated on subsequent
+// authenticated requests (via authMiddleware + csrfProtection), preventing
+// "CSRF_INVALID" 403 errors caused by session identifier mismatch.
+app.get('/api/csrf-token', optionalAuthMiddleware, (req, res) => {
   try {
+    ensureSessionCookie(req, res);
     const token = generateCsrfToken(req, res);
     if (!token) {
       logger.warn('CSRF token generation returned empty string — check CSRF_SECRET or JWT_SECRET env vars');
@@ -137,11 +147,15 @@ app.get('/api/csrf-token', (req, res) => {
 // CRIT-4: CSRF protection enforced on all state-changing routes.
 // /api/auth is intentionally excluded — login/register happen before a CSRF token exists.
 // However, admin auth routes (user management) do need CSRF — applied per-route in auth.routes.ts
-app.use('/api/cats', csrfProtection);
-app.use('/api/emergencies', csrfProtection);
-app.use('/api/donations', csrfProtection);
-app.use('/api/map', csrfProtection);
-app.use('/api/volunteers', csrfProtection);
+//
+// IMPORTANT: optionalAuthMiddleware runs before csrfProtection so that req.user is
+// available for getSessionIdentifier(). This ensures the CSRF token is validated
+// with the same session identifier (user ID) it was generated with.
+app.use('/api/cats', optionalAuthMiddleware, csrfProtection);
+app.use('/api/emergencies', optionalAuthMiddleware, csrfProtection);
+app.use('/api/donations', optionalAuthMiddleware, csrfProtection);
+app.use('/api/map', optionalAuthMiddleware, csrfProtection);
+app.use('/api/volunteers', optionalAuthMiddleware, csrfProtection);
 
 // mount each team member's routes
 app.use('/api/auth', authRoutes);

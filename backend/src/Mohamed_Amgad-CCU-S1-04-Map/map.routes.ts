@@ -1,8 +1,13 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import { validate } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/validate.middleware.js';
+import { mapController } from './map.controller.js';
+import { z } from 'zod';
 
 export const mapRoutes = Router();
 
+// Rate limit map API calls — Nominatim policy requires max 1 req/sec,
+// we allow 30/min per IP which is conservative and safe
 const mapLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 30, // 30 requests per minute per IP
@@ -14,13 +19,15 @@ const mapLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Proxy endpoint for Google Maps Geocoding API (protects API key from exposure)
-mapRoutes.get('/geocode', mapLimiter, async (_req, res) => {
-  // Placeholder for geocoding proxy — requires GOOGLE_MAPS_API_KEY to be configured
-  res.status(501).json({ success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Map geocoding not yet configured' } });
+// Zod schema for map query validation
+const mapQuerySchema = z.object({
+  q: z.string().min(2, 'Query must be at least 2 characters').max(200, 'Query must be at most 200 characters').trim(),
 });
 
-// Proxy endpoint for Google Maps Places API (protects API key from exposure)
-mapRoutes.get('/places', mapLimiter, async (_req, res) => {
-  res.status(501).json({ success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Map places search not yet configured' } });
-});
+// Geocoding endpoint — converts address/place name to coordinates
+// GET /api/map/geocode?q=Faculty+of+Computing+UTM
+mapRoutes.get('/geocode', mapLimiter, validate({ query: mapQuerySchema }), mapController.geocode);
+
+// Places search endpoint — searches for POIs near UTM campus
+// GET /api/map/places?q=cafe
+mapRoutes.get('/places', mapLimiter, validate({ query: mapQuerySchema }), mapController.searchPlaces);

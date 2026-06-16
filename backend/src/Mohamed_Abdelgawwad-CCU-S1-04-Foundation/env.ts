@@ -33,6 +33,11 @@ const envSchema = z.object({
   GOOGLE_MAPS_API_KEY: z.string().optional(),
 
   // SMTP — for sending password reset and email verification emails
+  // UTM uses Microsoft 365 / Exchange Online. Recommended settings:
+  //   SMTP_HOST = smtp.office365.com
+  //   SMTP_PORT = 587  (STARTTLS — NOT port 465)
+  //   SMTP_USER = your-utm-email@utm.my
+  //   SMTP_PASS = your UTM password (or app password if MFA is enabled)
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
   SMTP_USER: z.string().optional(),
