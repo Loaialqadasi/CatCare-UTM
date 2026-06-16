@@ -2,13 +2,19 @@
 
 'use client';
 
+<<<<<<< HEAD
 import { useState } from 'react';
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+<<<<<<< HEAD
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 import {
   User,
   Mail,
@@ -17,6 +23,7 @@ import {
   LogOut,
   BookOpen,
   Award,
+<<<<<<< HEAD
   KeyRound,
   Eye,
   EyeOff,
@@ -27,6 +34,13 @@ import { logout as apiLogout, changePassword } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+=======
+} from 'lucide-react';
+import { useAppStore } from '@/lib/store';
+import { logout as apiLogout } from '@/lib/api-client';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 
 
 const roleColors: Record<string, string> = {
@@ -54,6 +68,7 @@ export function UserProfile() {
   const { user, logout } = useAppStore();
   const router = useRouter();
 
+<<<<<<< HEAD
   // Change password state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -99,6 +114,8 @@ export function UserProfile() {
     }
   };
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   const handleSignOut = async () => {
     try { await apiLogout(); } catch { /* ignore — cookie may already be cleared */ }
     logout();
@@ -231,6 +248,7 @@ export function UserProfile() {
         </CardContent>
       </Card>
 
+<<<<<<< HEAD
       {/* Change Password */}
       <Card className="rounded-xl border-border/50">
         <CardHeader className="pb-3">
@@ -335,6 +353,8 @@ export function UserProfile() {
         </CardContent>
       </Card>
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
       {/* Danger Zone */}
       <Card className="rounded-xl border-red-200 dark:border-red-800">
         <CardHeader className="pb-3">

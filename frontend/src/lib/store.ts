@@ -3,7 +3,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User, Cat, EmergencyReport } from './types';
+<<<<<<< HEAD
 import { clearCsrfToken, startTokenRefreshTimer, stopTokenRefreshTimer } from './api-client';
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 
 interface AppState {
   // Auth state
@@ -35,6 +38,7 @@ export const useAppStore = create<AppState>()(
 
       // Auth actions
       setUser: (user) => set({ user }),
+<<<<<<< HEAD
       login: (user) => {
         clearCsrfToken(); // Clear stale CSRF token — new user session needs fresh token
         startTokenRefreshTimer();
@@ -48,6 +52,15 @@ export const useAppStore = create<AppState>()(
           isAuthenticated: false,
         });
       },
+=======
+      login: (user) =>
+        set({ user, isAuthenticated: true }),
+      logout: () =>
+        set({
+          user: null,
+          isAuthenticated: false,
+        }),
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 
       // Sidebar actions
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
@@ -55,6 +68,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'catcare-storage',
+<<<<<<< HEAD
       // Persist both isAuthenticated flag and user object.
       // Token is in an HttpOnly cookie — never in localStorage.
       // User object is persisted so the UI can show user info immediately
@@ -69,16 +83,27 @@ export const useAppStore = create<AppState>()(
       // rendering anything that depends on auth — otherwise the layout briefly
       // sees isAuthenticated: false and redirects to /login.
       skipHydration: true,
+=======
+      // CRIT-1 Fix: Only persist isAuthenticated flag.
+      // Token is now in an HttpOnly cookie — never in localStorage.
+      // User object is re-fetched via /api/auth/me on every page load.
+      partialize: (state) => ({
+        isAuthenticated: state.isAuthenticated,
+      }),
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     }
   )
 );
 
+<<<<<<< HEAD
 // Rehydrate the store manually and return a promise that resolves when done.
 // This lets the layout wait for auth state before deciding whether to redirect.
 export async function rehydrateAuth(): Promise<void> {
   await useAppStore.persist.rehydrate();
 }
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 // --- data cache ---
 // MIN-4 Fix: Added loading flags per resource
 // Cache now tracks the filter key that produced the cached data — switching

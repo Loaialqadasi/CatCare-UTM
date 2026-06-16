@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # CatCare UTM — Sprint 4: Layth Amgad
 
 ## Developer Info
@@ -36,10 +37,39 @@
 - Admin Users page (stats, table, CRUD dialogs, role change, password reset)
 - Profile page with change password, dashboard stats, sidebar/header updates
 - API client with token refresh, CSRF management, and all new endpoint functions
+=======
+# CatCare UTM — Sprint 4: Loai Rafaat
+
+## Developer Info
+- **Name:** Loai Rafaat
+- **Matric:** A23EC9010
+- **Role:** Sprint Lead / Cat Management & Volunteer Developer
+
+## Sprint 4 Contribution
+
+### 1. Cat Module — Soft Delete & Restore
+- All 6 cat module files updated with soft delete (DELETE /api/cats/:id) and restore (PATCH /api/cats/:id/restore) functionality, admin-only access, and listing filter to exclude soft-deleted records
+
+### 2. Volunteer Management System (NEW — UC17)
+- **`volunteers.controller.ts`**: Submit application, view own, admin list with pagination/filtering, approve/reject
+- **`volunteers.repository.ts`**: CRUD with status filtering, pagination, user-scoped queries
+- **`volunteers.routes.ts`**: POST /api/volunteers, GET /api/volunteers/my, GET /api/volunteers (admin), PATCH /api/volunteers/:id/status
+- **`volunteers.service.ts`**: Validation (age 16-100, interests 10+ chars), status transitions, duplicate prevention
+- **`volunteers.types.ts`**: VolunteerStatus enum, Volunteer type, CreateVolunteerFormData type
+
+### 3. Donation Module — Access Control Fixes
+- **`admin.middleware.ts`**: Updated to support admin AND manager roles
+- **`donations.controller.ts`**: Auth + admin/manager required for listing/summary (MED-07 fix)
+- **`donations.routes.ts`**: Added auth and admin middleware to listing and summary routes
+
+### 4. Frontend Updates
+- Volunteer application page, admin volunteer management, admin cats with soft delete/restore
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 
 ## New API Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+<<<<<<< HEAD
 | POST | `/api/auth/forgot-password` | Request password reset token |
 | POST | `/api/auth/reset-password` | Reset password with token |
 | PATCH | `/api/auth/change-password` | Change own password |
@@ -54,3 +84,13 @@
 | PATCH | `/api/auth/users/:id/password` | Admin reset password |
 
 ## Push Order: 4th (LAST — Auth touches the most shared files)
+=======
+| DELETE | `/api/cats/:id` | Soft delete cat (admin-only) |
+| PATCH | `/api/cats/:id/restore` | Restore soft-deleted cat |
+| POST | `/api/volunteers` | Submit volunteer application |
+| GET | `/api/volunteers/my` | View own applications |
+| GET | `/api/volunteers` | List all (admin/manager) |
+| PATCH | `/api/volunteers/:id/status` | Approve/reject (admin/manager) |
+
+## Push Order: 3rd (After migrations and tests — features depend on DB schema)
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e

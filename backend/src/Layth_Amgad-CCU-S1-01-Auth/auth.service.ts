@@ -4,9 +4,15 @@ import jwt from 'jsonwebtoken';
 import { env } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/env.js';
 import { AuthenticationError, ConflictError, ValidationError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
 import { logger } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/logger.js';
+<<<<<<< HEAD
 import { sendPasswordResetEmail, sendVerificationEmail } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/mailer.js';
 import { authRepository } from './auth.repository.js';
 import { AuthResult, LoginInput, RegisterInput, User, ForgotPasswordResult, ResetPasswordResult, RefreshTokenResult, VerifyEmailResult } from './auth.types.js';
+=======
+import { sendPasswordResetEmail } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/mailer.js';
+import { authRepository } from './auth.repository.js';
+import { AuthResult, LoginInput, RegisterInput, User, ForgotPasswordResult, ResetPasswordResult, RefreshTokenResult } from './auth.types.js';
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 
 // sign a JWT with the user's info — access token lasts however long JWT_EXPIRES_IN says
 const signToken = (user: User, expiresIn?: string): string => {
@@ -61,8 +67,12 @@ export const authService = {
 
     const passwordHash = await bcrypt.hash(input.password, 12);
 
+<<<<<<< HEAD
     // Auto-verify email on registration — email-based verification is not used.
     // Users can log in immediately after registering.
+=======
+    // Email verification is disabled — all users are auto-verified on registration.
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     const emailVerified = true;
 
     const user = await authRepository.create({
@@ -76,6 +86,7 @@ export const authService = {
     const token = signToken(user);
     const refreshToken = signRefreshToken(user);
 
+<<<<<<< HEAD
     // C-3 FIX: Store refresh token hash server-side so it can be revoked later
     const refreshTokenHash = authRepository.hashRefreshToken(refreshToken);
     const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -83,6 +94,8 @@ export const authService = {
       logger.error({ err }, 'Failed to store refresh token (non-blocking)');
     });
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     return { user, token, refreshToken };
   },
 
@@ -98,13 +111,17 @@ export const authService = {
       throw new AuthenticationError('Invalid UTM email or password');
     }
 
+<<<<<<< HEAD
     // Email verification check removed — users are auto-verified on registration.
     // If a user somehow has emailVerified=false, they can still log in.
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     // never send the password hash back to the client
     const { passwordHash, ...safeUser } = user;
     const token = signToken(safeUser);
     const refreshToken = signRefreshToken(safeUser);
+<<<<<<< HEAD
 
     // C-3 FIX: Store refresh token hash server-side so it can be revoked later
     const refreshTokenHash = authRepository.hashRefreshToken(refreshToken);
@@ -113,6 +130,8 @@ export const authService = {
       logger.error({ err }, 'Failed to store refresh token (non-blocking)');
     });
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     return { user: safeUser, token, refreshToken };
   },
 
@@ -144,6 +163,7 @@ export const authService = {
     // Clean up expired reset tokens (best-effort, non-blocking)
     authRepository.deleteExpiredResets().catch(() => {});
 
+<<<<<<< HEAD
     // Build the reset URL — attempt email delivery if SMTP is configured,
     // but always return the token so the frontend can handle the reset
     // directly within the web app (no email dependency required).
@@ -155,6 +175,20 @@ export const authService = {
     // Always return the token so the frontend can redirect to the reset
     // password form directly — the app does not require email delivery.
     return { message: 'If an account with that email exists, a reset link has been sent.', token: rawToken };
+=======
+    // Send the reset email with the raw token (not the hash)
+    const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+    sendPasswordResetEmail(email, resetUrl).catch((err) => {
+      logger.error({ err, email }, 'Failed to send password reset email (non-blocking)');
+    });
+
+    // In development, include the token in the response for testing
+    if (env.NODE_ENV === 'development') {
+      return { message: 'If an account with that email exists, a reset link has been sent.', token: rawToken };
+    }
+
+    return { message: 'If an account with that email exists, a reset link has been sent.' };
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   },
 
   async resetPassword(token: string, newPassword: string): Promise<ResetPasswordResult> {
@@ -176,6 +210,7 @@ export const authService = {
     // Mark the reset token as used so it can't be reused
     await authRepository.markResetUsed(tokenHash);
 
+<<<<<<< HEAD
     // C-4 FIX: Revoke all refresh tokens for this user on password reset
     await authRepository.revokeAllUserRefreshTokens(reset.userId);
 
@@ -221,6 +256,14 @@ export const authService = {
         throw new AuthenticationError('Refresh token has been revoked or expired');
       }
 
+=======
+    return { message: 'Password has been reset successfully.' };
+  },
+
+  async refreshToken(token: string): Promise<RefreshTokenResult> {
+    try {
+      const { id } = verifyTypedToken(token, 'refresh');
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
       const user = await authRepository.findById(id);
       if (!user) {
         throw new AuthenticationError('Invalid refresh token');
@@ -238,6 +281,7 @@ export const authService = {
 
   // ─── Admin: User Management ───
 
+<<<<<<< HEAD
   async listUsers(page?: number, pageSize?: number): Promise<{ items: User[]; pagination: { page: number; pageSize: number; totalItems: number; totalPages: number } }> {
     const safePage = Math.max(1, page ?? 1);
     const safePageSize = Math.max(1, Math.min(100, pageSize ?? 50));
@@ -248,6 +292,10 @@ export const authService = {
     ]);
     const totalPages = Math.max(1, Math.ceil(totalItems / safePageSize));
     return { items, pagination: { page: safePage, pageSize: safePageSize, totalItems, totalPages } };
+=======
+  async listUsers(): Promise<User[]> {
+    return authRepository.listAll();
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   },
 
   async adminCreateUser(input: { fullName: string; email: string; password: string; role: string }): Promise<User> {
@@ -286,6 +334,7 @@ export const authService = {
     return user;
   },
 
+<<<<<<< HEAD
   // C-6 FIX: Protect admin@utm.my from role changes by other admins
   async updateUserRole(userId: number, role: string): Promise<User> {
     // Check if the target user is the primary admin
@@ -296,6 +345,9 @@ export const authService = {
     if (targetUser.email === 'admin@utm.my') {
       throw new AuthenticationError('Cannot change the role of the primary admin account (admin@utm.my)');
     }
+=======
+  async updateUserRole(userId: number, role: string): Promise<User> {
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     const user = await authRepository.updateRole(userId, role);
     if (!user) {
       throw new AuthenticationError('User not found');
@@ -310,6 +362,7 @@ export const authService = {
     }
     await authRepository.deleteById(userId);
   },
+<<<<<<< HEAD
 
   // ─── Email Verification ───
 
@@ -347,4 +400,6 @@ export const authService = {
 
     return { message: 'If an account with that email exists and is not yet verified, a new verification link has been sent.' };
   },
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 };

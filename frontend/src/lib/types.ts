@@ -8,7 +8,10 @@ export interface User {
   fullName: string;
   email: string;
   role: UserRole;
+<<<<<<< HEAD
   emailVerified: boolean;
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   createdAt: string;
   updatedAt: string;
 }

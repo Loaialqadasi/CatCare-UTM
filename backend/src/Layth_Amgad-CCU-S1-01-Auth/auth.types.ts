@@ -41,7 +41,11 @@ export interface AuthResult {
 
 export interface ForgotPasswordResult {
   message: string;
+<<<<<<< HEAD
   token?: string; // Included for in-app password reset (no email delivery)
+=======
+  token?: string; // Only included in development for testing
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 }
 
 export interface ResetPasswordResult {
@@ -51,7 +55,10 @@ export interface ResetPasswordResult {
 export interface RefreshTokenResult {
   token: string;
 }
+<<<<<<< HEAD
 
 export interface VerifyEmailResult {
   message: string;
 }
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e

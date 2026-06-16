@@ -35,7 +35,10 @@ interface RawUser {
   fullName: string;
   email: string;
   role: string;
+<<<<<<< HEAD
   emailVerified: boolean;
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   createdAt: string;
   updatedAt: string;
 }
@@ -162,7 +165,10 @@ function normalizeUser(raw: RawUser): User {
     fullName: raw.fullName,
     email: raw.email,
     role: raw.role as User['role'],
+<<<<<<< HEAD
     emailVerified: raw.emailVerified,
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   };
@@ -197,6 +203,7 @@ async function getStoreLogout() {
   return _storeLogout;
 }
 
+<<<<<<< HEAD
 // --- Automatic token refresh ---
 // When a 401 is received (but NOT from login/register), we try to silently
 // refresh the access token before logging the user out. The backend exposes
@@ -242,13 +249,19 @@ export function stopTokenRefreshTimer(): void {
   }
 }
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 // CRIT-4: Fetch and cache CSRF token for state-changing requests
 // The CSRF token can expire or become invalid, so we need to handle
 // token refresh gracefully. We cache the token but clear it on errors.
 let _csrfToken: string | null = null;
 let _csrfTokenPromise: Promise<string> | null = null;
 
+<<<<<<< HEAD
 export async function ensureCsrfToken(): Promise<string> {
+=======
+async function ensureCsrfToken(): Promise<string> {
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   // Return cached token if available
   if (_csrfToken) return _csrfToken;
 
@@ -275,7 +288,11 @@ export async function ensureCsrfToken(): Promise<string> {
 }
 
 // Clear the cached CSRF token (called on logout or when token is invalid)
+<<<<<<< HEAD
 export function clearCsrfToken(): void {
+=======
+function clearCsrfToken(): void {
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   _csrfToken = null;
   _csrfTokenPromise = null;
 }
@@ -328,6 +345,7 @@ async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
     }
   }
 
+<<<<<<< HEAD
   // MED-4: Global 401 interceptor with automatic token refresh
   if (res.status === 401) {
     // Don't try to refresh if this was a login/register request
@@ -357,6 +375,10 @@ async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
     }
     // Refresh failed or retry still returned 401 — force logout
     stopTokenRefreshTimer();
+=======
+  // MED-4: Global 401 interceptor
+  if (res.status === 401) {
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     getStoreLogout().then(fn => fn());
     toast.error('Your session has expired. Please log in again.');
     throw new Error('SESSION_EXPIRED');
@@ -459,6 +481,7 @@ export async function createCat(
   return normalizeCat(json.data);
 }
 
+<<<<<<< HEAD
 export async function updateCat(
   id: string,
   data: Partial<Omit<CreateCatFormData, 'photo'>> & { photo?: File; photoUrl?: string | null },
@@ -506,6 +529,8 @@ export async function restoreCat(id: string): Promise<Cat> {
   return normalizeCat(json.data);
 }
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 // --- emergencies ---
 
 export async function fetchEmergencies(
@@ -807,9 +832,13 @@ export async function fetchAllUsers(): Promise<AdminUser[]> {
   const res = await apiFetch(`${API_BASE}/auth/users`);
   const json = await res.json();
   if (!json.success) throw new Error(json.error?.message || 'Failed to fetch users');
+<<<<<<< HEAD
   // Backend returns paginated { items, pagination } — extract the items array
   const items = Array.isArray(json.data) ? json.data : (json.data?.items ?? []);
   return items.map((u: any) => ({
+=======
+  return json.data.map((u: any) => ({
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     id: String(u.id),
     fullName: u.fullName,
     email: u.email,
@@ -884,6 +913,7 @@ export async function deleteUser(userId: string): Promise<void> {
   const json = await res.json();
   if (!json.success) throw new Error(json.error?.message || 'Failed to delete user');
 }
+<<<<<<< HEAD
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
   const res = await apiFetch(`${API_BASE}/auth/change-password`, {
@@ -928,3 +958,5 @@ export async function resetPassword(token: string, password: string): Promise<{ 
   if (!json.success) throw new Error(json.error?.message || 'Failed to reset password');
   return json.data;
 }
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e

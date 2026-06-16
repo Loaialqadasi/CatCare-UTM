@@ -9,7 +9,10 @@ import { Cat, AlertTriangle, HeartPulse, ShieldAlert, Heart, Clock } from 'lucid
 import { cn } from '@/lib/utils';
 
 import { fetchCats, fetchEmergencies, fetchPriorityFeed, fetchDonationSummary } from '@/lib/api-client';
+<<<<<<< HEAD
 import { useAppStore } from '@/lib/store';
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 
 interface StatCardProps {
   title: string;
@@ -42,10 +45,17 @@ function StatCard({ title, value, icon, color, bgColor, description, delay = 0 }
   );
 }
 
+<<<<<<< HEAD
 function LoadingSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
       {Array.from({ length: count }).map((_, i) => (
+=======
+function LoadingSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+      {Array.from({ length: 6 }).map((_, i) => (
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
         <Card key={i} className="rounded-xl">
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
@@ -64,8 +74,11 @@ function LoadingSkeleton({ count = 6 }: { count?: number }) {
 }
 
 export function StatsCards() {
+<<<<<<< HEAD
   const { user } = useAppStore();
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   const [stats, setStats] = useState({
     totalCats: 0,
     openEmergencies: 0,
@@ -78,6 +91,7 @@ export function StatsCards() {
 
   useEffect(() => {
     async function loadStats() {
+<<<<<<< HEAD
       // Build the list of fetches; only fetch donation summary for admin/manager
       const fetches: Promise<any>[] = [
         fetchCats({ pageSize: 100 }),
@@ -89,11 +103,23 @@ export function StatsCards() {
       }
 
       const results = await Promise.allSettled(fetches);
+=======
+      const results = await Promise.allSettled([
+        fetchCats({ pageSize: 100 }),
+        fetchEmergencies({ pageSize: 100 }),
+        fetchPriorityFeed(),
+        fetchDonationSummary(),
+      ]);
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 
       const catsRes = results[0].status === 'fulfilled' ? results[0].value : null;
       const emergenciesRes = results[1].status === 'fulfilled' ? results[1].value : null;
       const priorityFeed = results[2].status === 'fulfilled' ? results[2].value : null;
+<<<<<<< HEAD
       const donationSummary = isAdmin && results[3]?.status === 'fulfilled' ? results[3].value : null;
+=======
+      const donationSummary = results[3].status === 'fulfilled' ? results[3].value : null;
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 
       // Log any failures for debugging
       results.forEach((r, i) => {
@@ -117,6 +143,7 @@ export function StatsCards() {
     }
 
     loadStats();
+<<<<<<< HEAD
   }, [isAdmin]);
 
   if (loading) return <LoadingSkeleton count={isAdmin ? 6 : 4} />;
@@ -147,6 +174,14 @@ export function StatsCards() {
 
   return (
     <div className={cn('grid gap-4', isAdmin ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-6' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4')}>
+=======
+  }, []);
+
+  if (loading) return <LoadingSkeleton />;
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
       <StatCard
         title="Total Cats"
         value={stats.totalCats}
@@ -183,7 +218,28 @@ export function StatsCards() {
         description="Critical & high priority"
         delay={0.3}
       />
+<<<<<<< HEAD
       {donationCards}
+=======
+      <StatCard
+        title="Total Donations"
+        value={stats.totalDonations}
+        icon={<Heart className="h-5 w-5" />}
+        color="text-rose-600 dark:text-rose-400"
+        bgColor="bg-rose-100 dark:bg-rose-950/40"
+        description="Contributions received"
+        delay={0.35}
+      />
+      <StatCard
+        title="Pending Donations"
+        value={stats.pendingDonations}
+        icon={<Clock className="h-5 w-5" />}
+        color="text-amber-600 dark:text-amber-400"
+        bgColor="bg-amber-100 dark:bg-amber-950/40"
+        description="Awaiting review"
+        delay={0.4}
+      />
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     </div>
   );
 }

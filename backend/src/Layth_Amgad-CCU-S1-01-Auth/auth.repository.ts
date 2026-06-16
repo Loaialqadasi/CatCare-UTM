@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 import crypto from 'node:crypto';
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 import { DatabaseError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
 import { db } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/database.js';
 import { User, UserWithPassword, CreateUserInput } from './auth.types.js';
@@ -23,6 +26,7 @@ interface PasswordResetRow {
   created_at: string;
 }
 
+<<<<<<< HEAD
 interface RefreshTokenRow {
   id: number;
   user_id: number;
@@ -32,6 +36,8 @@ interface RefreshTokenRow {
   created_at: string;
 }
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 // DB rows use snake_case, our app uses camelCase
 const mapUser = (row: UserRow): User => ({
   id: row.id,
@@ -71,6 +77,7 @@ export const authRepository = {
     return mapUser(rows[0]);
   },
 
+<<<<<<< HEAD
   async findByIdWithPassword(id: number): Promise<UserWithPassword | null> {
     const { rows } = await db.query<UserRow>(
       'SELECT id, full_name, email, password_hash, role, email_verified, created_at, updated_at FROM users WHERE id = $1 LIMIT 1',
@@ -80,6 +87,8 @@ export const authRepository = {
     return mapUserWithPassword(rows[0]);
   },
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   async create(input: CreateUserInput): Promise<User> {
     const emailVerified = input.emailVerified ?? false;
     const { rows } = await db.query<UserRow>(
@@ -153,14 +162,21 @@ export const authRepository = {
 
   // ─── Admin: User Management ───
 
+<<<<<<< HEAD
   async listAll(limit = 100, offset = 0): Promise<User[]> {
     const { rows } = await db.query<UserRow>(
       'SELECT id, full_name, email, password_hash, role, email_verified, created_at, updated_at FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2',
       [limit, offset]
+=======
+  async listAll(): Promise<User[]> {
+    const { rows } = await db.query<UserRow>(
+      'SELECT id, full_name, email, password_hash, role, email_verified, created_at, updated_at FROM users ORDER BY created_at DESC'
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     );
     return rows.map(mapUser);
   },
 
+<<<<<<< HEAD
   async countAll(): Promise<number> {
     const { rows } = await db.query<{ count: string }>(
       'SELECT COUNT(*)::text as count FROM users'
@@ -168,6 +184,8 @@ export const authRepository = {
     return Number(rows[0]?.count ?? 0);
   },
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   async updateRole(userId: number, role: string): Promise<User | null> {
     const { rows } = await db.query<UserRow>(
       'UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2 RETURNING id, full_name, email, password_hash, role, email_verified, created_at, updated_at',
@@ -208,12 +226,17 @@ export const authRepository = {
   },
 
   async deleteById(userId: number): Promise<void> {
+<<<<<<< HEAD
     // First delete related records
     await db.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
+=======
+    // First delete related password resets
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     await db.query('DELETE FROM password_resets WHERE user_id = $1', [userId]);
     // Then delete the user
     await db.query('DELETE FROM users WHERE id = $1', [userId]);
   },
+<<<<<<< HEAD
 
   // ─── C-3 FIX: Refresh Token Storage Methods ───
   // Store refresh token hashes server-side so they can be revoked on logout,
@@ -266,4 +289,6 @@ export const authRepository = {
       'DELETE FROM refresh_tokens WHERE expires_at < NOW() OR revoked_at IS NOT NULL'
     );
   },
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 };

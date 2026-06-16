@@ -33,10 +33,17 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
+<<<<<<< HEAD
 import { Users, Shield, BookOpen, Award, Loader2, Plus, Pencil, Trash2, UserPlus, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { fetchAllUsers, updateUserRole, createUser, updateUser, deleteUser, adminResetUserPassword } from '@/lib/api-client';
+=======
+import { Users, Shield, BookOpen, Award, Loader2, Plus, Pencil, Trash2, UserPlus } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { fetchAllUsers, updateUserRole, createUser, updateUser, deleteUser } from '@/lib/api-client';
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 import type { AdminUser } from '@/lib/api-client';
 
 const roleColors: Record<string, string> = {
@@ -69,6 +76,7 @@ export default function AdminUsersPage() {
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+<<<<<<< HEAD
   // Reset password dialog
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [resetPasswordTarget, setResetPasswordTarget] = useState<AdminUser | null>(null);
@@ -78,6 +86,9 @@ export default function AdminUsersPage() {
 
   const isAdmin = user?.role === 'admin';
   // H-1 FIX: Only true admins (not managers) can manage users
+=======
+  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 
   useEffect(() => {
     if (!isAdmin) {
@@ -100,11 +111,14 @@ export default function AdminUsersPage() {
   }, [user, router, isAdmin]);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
+<<<<<<< HEAD
     // Prevent changing own role
     if (userId === user?.id) {
       toast.error('You cannot change your own role');
       return;
     }
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     setUpdatingRole(userId);
     try {
       await updateUserRole(userId, newRole);
@@ -124,12 +138,17 @@ export default function AdminUsersPage() {
       toast.error('All fields are required');
       return;
     }
+<<<<<<< HEAD
     if (newUser.password.length < 8) {
       toast.error('Password must be at least 8 characters');
       return;
     }
     if (!/[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]/.test(newUser.password)) {
       toast.error('Password must contain at least one special character');
+=======
+    if (newUser.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
       return;
     }
     setCreating(true);
@@ -202,6 +221,7 @@ export default function AdminUsersPage() {
     }
   };
 
+<<<<<<< HEAD
   const openResetPasswordDialog = (u: AdminUser) => {
     setResetPasswordTarget(u);
     setResetPasswordValue('');
@@ -233,6 +253,8 @@ export default function AdminUsersPage() {
     }
   };
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   if (!isAdmin) return null;
 
   const stats = {
@@ -338,7 +360,11 @@ export default function AdminUsersPage() {
                         <Select
                           value={u.role}
                           onValueChange={(value) => handleRoleChange(u.id, value)}
+<<<<<<< HEAD
                           disabled={updatingRole === u.id || u.id === user?.id}
+=======
+                          disabled={updatingRole === u.id}
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
                         >
                           <SelectTrigger className="w-[130px] h-8 text-xs">
                             {updatingRole === u.id ? (
@@ -357,9 +383,12 @@ export default function AdminUsersPage() {
                             <SelectItem value="admin">Admin</SelectItem>
                           </SelectContent>
                         </Select>
+<<<<<<< HEAD
                         {u.id === user?.id && (
                           <p className="text-[10px] text-muted-foreground mt-0.5">Cannot change own role</p>
                         )}
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -369,6 +398,7 @@ export default function AdminUsersPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+<<<<<<< HEAD
                             onClick={() => openResetPasswordDialog(u)}
                             className="h-8 w-8 p-0 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
                             title="Reset Password"
@@ -378,6 +408,8 @@ export default function AdminUsersPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
                             onClick={() => openEditDialog(u)}
                             className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                           >
@@ -439,7 +471,11 @@ export default function AdminUsersPage() {
                 type="password"
                 value={newUser.password}
                 onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+<<<<<<< HEAD
                 placeholder="Min 8 chars + special char"
+=======
+                placeholder="Minimum 6 characters"
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
                 disabled={creating}
               />
             </div>
@@ -523,6 +559,7 @@ export default function AdminUsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+<<<<<<< HEAD
 
       {/* Reset Password Dialog */}
       <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
@@ -568,6 +605,8 @@ export default function AdminUsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     </div>
   );
 }

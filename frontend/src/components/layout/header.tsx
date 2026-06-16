@@ -26,14 +26,20 @@ import { logout as apiLogout } from '@/lib/api-client';
 const roleColors: Record<string, string> = {
   student: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   volunteer: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+<<<<<<< HEAD
   manager: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   admin: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
 };
 
 const roleLabels: Record<string, string> = {
   student: 'Student',
   volunteer: 'Volunteer',
+<<<<<<< HEAD
   manager: 'Manager',
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   admin: 'Admin',
 };
 
@@ -96,7 +102,11 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
+<<<<<<< HEAD
             <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent transition-colors cursor-pointer border border-transparent hover:border-border/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="User menu">
+=======
+            <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent transition-colors cursor-pointer border border-transparent hover:border-border/50">
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 text-white text-xs font-bold">
                 {initials}
               </div>

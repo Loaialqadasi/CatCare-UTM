@@ -48,6 +48,7 @@ export const authMiddleware = (req: Request, _res: Response, next: NextFunction)
     next(new AuthenticationError('Missing or invalid token'));
   }
 };
+<<<<<<< HEAD
 
 /**
  * Optional auth middleware — sets req.user if a valid JWT is present,
@@ -90,3 +91,5 @@ export const optionalAuthMiddleware = (req: Request, _res: Response, next: NextF
 
   next();
 };
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e

@@ -49,6 +49,7 @@ export const resetPasswordSchema = z.object({
   password: passwordSchema,
 });
 
+<<<<<<< HEAD
 // Change password schema (in-app, authenticated user)
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
@@ -60,6 +61,8 @@ export const adminResetPasswordSchema = z.object({
   password: passwordSchema,
 });
 
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 // Refresh token schema
 export const refreshTokenSchema = z.object({
   // Empty — token comes from cookie

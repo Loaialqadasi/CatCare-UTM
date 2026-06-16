@@ -33,8 +33,12 @@ interface NavItem {
   icon: React.ReactNode;
   section?: string;
   route: string;
+<<<<<<< HEAD
   adminOnly?: boolean;    // Only admin (not manager)
   managerOnly?: boolean; // Admin OR manager
+=======
+  adminOnly?: boolean;
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 }
 
 const navItems: NavItem[] = [
@@ -107,7 +111,11 @@ const navItems: NavItem[] = [
     icon: <ClipboardCheck className="h-5 w-5" />,
     section: 'Admin',
     route: '/admin/donations',
+<<<<<<< HEAD
     managerOnly: true,
+=======
+    adminOnly: true,
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   },
   {
     id: 'admin-users',
@@ -123,7 +131,11 @@ const navItems: NavItem[] = [
     icon: <Shield className="h-5 w-5" />,
     section: 'Admin',
     route: '/admin/emergencies',
+<<<<<<< HEAD
     managerOnly: true,
+=======
+    adminOnly: true,
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   },
   {
     id: 'admin-volunteers',
@@ -131,7 +143,11 @@ const navItems: NavItem[] = [
     icon: <HandHeart className="h-5 w-5" />,
     section: 'Admin',
     route: '/admin/volunteers',
+<<<<<<< HEAD
     managerOnly: true,
+=======
+    adminOnly: true,
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   },
   {
     id: 'admin-cats',
@@ -139,7 +155,11 @@ const navItems: NavItem[] = [
     icon: <Cat className="h-5 w-5" />,
     section: 'Admin',
     route: '/admin/cats',
+<<<<<<< HEAD
     managerOnly: true,
+=======
+    adminOnly: true,
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
   },
   {
     id: 'profile',
@@ -190,10 +210,16 @@ function SidebarContent({
     return false;
   };
 
+<<<<<<< HEAD
   // Filter items based on role — H-1 FIX: adminOnly = admin only, managerOnly = admin or manager
   const visibleItems = navItems.filter((item) => {
     if (item.adminOnly && user?.role !== 'admin') return false;
     if (item.managerOnly && !isAdmin) return false;
+=======
+  // Filter items based on role
+  const visibleItems = navItems.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false;
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     return true;
   });
 
@@ -216,7 +242,11 @@ function SidebarContent({
       </div>
 
       {/* Navigation */}
+<<<<<<< HEAD
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1" aria-label="Main navigation">
+=======
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
         {sections.map((section) => {
           const sectionItems = visibleItems.filter((item) => item.section === section);
           if (sectionItems.length === 0) return null;
@@ -237,8 +267,11 @@ function SidebarContent({
                 const button = (
                   <button
                     onClick={() => handleNavigate(item.route)}
+<<<<<<< HEAD
                     aria-label={item.label}
                     aria-current={active ? 'page' : undefined}
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
                     className={cn(
                       'w-full flex items-center gap-3 rounded-lg transition-all duration-200',
                       collapsed ? 'justify-center p-2.5' : 'px-3 py-2.5',
@@ -306,7 +339,10 @@ function SidebarContent({
                   storeLogout();
                   router.push('/login');
                 }}
+<<<<<<< HEAD
                 aria-label="Sign out"
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
                 className="w-full flex items-center justify-center p-2.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
               >
                 <LogOut className="h-5 w-5" />
@@ -323,7 +359,10 @@ function SidebarContent({
               storeLogout();
               router.push('/login');
             }}
+<<<<<<< HEAD
             aria-label="Sign out"
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
           >
             <LogOut className="h-5 w-5" />
@@ -348,7 +387,10 @@ export function Sidebar({ collapsed, onToggleCollapse }: { collapsed: boolean; o
         <SidebarContent collapsed={collapsed} />
         <button
           onClick={onToggleCollapse}
+<<<<<<< HEAD
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
           className="absolute -right-3 top-6 z-50 flex items-center justify-center w-6 h-6 rounded-full border bg-card shadow-sm hover:bg-accent transition-colors"
         >
           {collapsed ? (

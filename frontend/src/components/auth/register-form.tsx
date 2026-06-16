@@ -88,7 +88,10 @@ export function RegisterForm() {
     setLoading(true);
     try {
       const result = await register({ fullName: fullName.trim(), email, password });
+<<<<<<< HEAD
       // Always auto-login — email verification is not used
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
       storeLogin(result.user);
       toast.success('Account created!', { description: `Welcome to CatCare UTM, ${result.user.fullName}` });
       router.push('/dashboard');
@@ -202,7 +205,10 @@ export function RegisterForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+<<<<<<< HEAD
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     tabIndex={-1}
                   >

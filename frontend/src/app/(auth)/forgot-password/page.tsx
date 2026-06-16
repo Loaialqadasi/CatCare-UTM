@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+<<<<<<< HEAD
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -28,11 +29,31 @@ export default function ForgotPasswordPage() {
 
   // Step 1: Submit email to get a reset token
   const handleEmailSubmit = async (e: React.FormEvent) => {
+=======
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Mail, Cat, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://catcare-backend.onrender.com/api';
+
+export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     e.preventDefault();
     if (!email.trim()) {
       toast.error('Please enter your email address');
       return;
     }
+<<<<<<< HEAD
     if (!email.endsWith('@utm.my') && !email.endsWith('@graduate.utm.my')) {
       toast.error('Please use a valid UTM email (e.g. your.name@utm.my)');
       return;
@@ -87,6 +108,29 @@ export default function ForgotPasswordPage() {
       });
     } finally {
       setLoadingReset(false);
+=======
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error?.message || 'Failed to send reset email');
+      }
+      setSent(true);
+      toast.success('Reset email sent', { description: 'Check your inbox for a password reset link' });
+    } catch (err) {
+      toast.error('Failed to send reset email', {
+        description: err instanceof Error ? err.message : 'Please try again',
+      });
+    } finally {
+      setLoading(false);
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
     }
   };
 
@@ -103,6 +147,7 @@ export default function ForgotPasswordPage() {
             <Cat className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-foreground">CatCare UTM</h1>
+<<<<<<< HEAD
           <p className="text-muted-foreground mt-1">Reset Your Password</p>
         </div>
 
@@ -248,6 +293,78 @@ export default function ForgotPasswordPage() {
               </Button>
             </div>
           )}
+=======
+          <p className="text-muted-foreground mt-1">Reset your password</p>
+        </div>
+
+        <Card className="rounded-2xl shadow-xl border-amber-100/80 backdrop-blur-sm bg-white/80">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-xl">Forgot Password</CardTitle>
+            <CardDescription>
+              {sent
+                ? 'A reset link has been sent to your email'
+                : 'Enter your UTM email to receive a reset link'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {sent ? (
+              <div className="text-center space-y-4 py-4">
+                <CheckCircle2 className="h-16 w-16 text-emerald-500 mx-auto" />
+                <p className="text-sm text-muted-foreground">
+                  If an account with <strong>{email}</strong> exists, you will receive a password reset link shortly.
+                </p>
+                <Button
+                  onClick={() => router.push('/login')}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg"
+                >
+                  Back to Sign In
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your.email@utm.my"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Sending reset link...
+                    </span>
+                  ) : (
+                    'Send Reset Link'
+                  )}
+                </Button>
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => router.push('/login')}
+                    className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Back to Sign In
+                  </button>
+                </div>
+              </form>
+            )}
+          </CardContent>
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
         </Card>
       </div>
     </div>

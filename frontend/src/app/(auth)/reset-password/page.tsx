@@ -9,8 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Lock, Cat, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+<<<<<<< HEAD
 import { resetPassword } from '@/lib/api-client';
 import { validatePassword, validatePasswordMatch } from '@/lib/validators';
+=======
+import { cn } from '@/lib/utils';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://catcare-backend.onrender.com/api';
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -28,6 +34,7 @@ function ResetPasswordForm() {
       toast.error('Invalid reset link', { description: 'No reset token found. Please request a new one.' });
       return;
     }
+<<<<<<< HEAD
 
     const pwdValidation = validatePassword(password);
     if (!pwdValidation.valid) {
@@ -38,12 +45,37 @@ function ResetPasswordForm() {
     const matchValidation = validatePasswordMatch(password, confirmPassword);
     if (!matchValidation.valid) {
       toast.error(matchValidation.error!);
+=======
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]/.test(password)) {
+      toast.error('Password must contain at least one special character');
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
       return;
     }
 
     setLoading(true);
     try {
+<<<<<<< HEAD
       await resetPassword(token, password);
+=======
+      const res = await fetch(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ token, password }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error?.message || 'Failed to reset password');
+      }
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
       setSuccess(true);
       toast.success('Password reset successfully!');
     } catch (err) {
@@ -123,7 +155,10 @@ function ResetPasswordForm() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+<<<<<<< HEAD
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
+=======
+>>>>>>> c4c05d1dbba72ca5ab6c54197d794c3c574d081e
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                       tabIndex={-1}
                     >
