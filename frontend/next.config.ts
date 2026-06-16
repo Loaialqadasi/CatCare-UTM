@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   // CRIT-07 Fix: Remove ignoreBuildErrors — fix underlying TS errors instead
   // CRIT-08 Fix: Enable React Strict Mode to catch real bugs
   reactStrictMode: true,
@@ -14,6 +13,25 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "unpkg.com",
+      },
+      // Supabase Storage — supports both standard and custom domains
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "supabase.com",
+      },
+      // Placecats placeholder
+      {
+        protocol: "https",
+        hostname: "placecats.com",
+      },
+      // Render backend — serves uploaded cat/donation photos
+      {
+        protocol: "https",
+        hostname: "catcare-backend.onrender.com",
       },
     ],
   },

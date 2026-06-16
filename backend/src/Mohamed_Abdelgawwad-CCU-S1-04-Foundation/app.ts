@@ -1,25 +1,36 @@
 import express from 'express';
-import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
-import { doubleCsrf } from 'csrf-csrf';
 import { env } from './env.js';
 import { logger } from './logger.js';
 import { success } from './response.js';
 import { errorHandler } from './error.middleware.js';
 import { notFoundHandler } from './not-found.middleware.js';
+import { generateCsrfToken, csrfProtection, ensureSessionCookie } from './csrf.js';
 import { authRoutes } from '../Layth_Amgad-CCU-S1-01-Auth/auth.routes.js';
+import { optionalAuthMiddleware } from '../Layth_Amgad-CCU-S1-01-Auth/auth.middleware.js';
 import { catsRoutes } from '../Loai_Rafaat-CCU-S1-02-Cats/cats.routes.js';
 import { emergenciesRoutes } from '../Youssef_Mostafa-CCU-S1-03-Emergencies/emergencies.routes.js';
 import { donationsRoutes } from '../Layth_Amgad-CCU-S1-28-Donations/donations.routes.js';
 import { mapRoutes } from '../Mohamed_Amgad-CCU-S1-04-Map/map.routes.js';
 import { volunteersRoutes } from './volunteers.routes.js';
 import { db } from './database.js';
+import { getStorageStatus, ensureBucketExists } from './supabase-storage.js';
 
 const app = express();
+
+// CRIT-FIX: Trust the reverse proxy used by Render (and other cloud hosts).
+// Without this, Express sees req.protocol as 'http' (because the proxy
+// terminates TLS), which prevents `secure: true` cookies from being set.
+// Browsers reject SameSite=None cookies that lack the Secure flag, so
+// the CSRF cookie and JWT cookies were NEVER stored — causing 403 errors
+// on every state-changing request from the Vercel frontend.
+if (env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // skip HTTP logging in tests to keep output clean
 if (env.NODE_ENV !== 'test') {
@@ -31,18 +42,14 @@ const allowedOrigins = env.CORS_ORIGIN.split(',').map(u => u.trim()).filter(Bool
 
 // MIN-08 Fix: Add Content-Security-Policy via Helmet
 // MED-03: CSP connect-src includes all allowed CORS origins
+// CRIT-FIX: Disable CSP on API responses — CSP is a browser-enforced header
+// that only makes sense for HTML pages. On an API it has no effect except
+// potentially confusing preflight checks. The frontend (Next.js) should set
+// its own CSP.
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:', 'https://placecats.com', 'https://res.cloudinary.com'],
-        connectSrc: ["'self'", ...allowedOrigins],
-      },
-    },
+    contentSecurityPolicy: false,
   })
 );
 
@@ -52,8 +59,10 @@ app.use(
       // Allow requests with no origin (mobile apps, curl, server-side)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
-      // Also allow Vercel preview deployments
-      if (origin.match(/\.vercel\.app$/)) return callback(null, true);
+      // H-4 FIX: Only allow Vercel preview deployments from the project's specific subdomain
+      // Previously: any *.vercel.app was allowed — this was too permissive.
+      // Now: only allow the specific CatCare Vercel deployment domains
+      if (origin.match(/catcare-utm.*\.vercel\.app$/)) return callback(null, true);
       callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -65,22 +74,8 @@ app.use(
 // CRIT-1 Fix: Parse cookies for HttpOnly JWT
 app.use(cookieParser());
 
-// CRIT-4: CSRF protection using double-submit cookie pattern
-// NOTE: CSRF protection is applied selectively to state-changing routes only,
-// not to auth routes (login/register) since users don't have tokens yet.
-const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
-  getSecret: () => env.CSRF_SECRET || env.JWT_SECRET,
-  getSessionIdentifier: () => 'catcare-utm',
-  cookieName: 'x-csrf-token',
-  cookieOptions: {
-    sameSite: env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const,
-    path: '/',
-    secure: env.NODE_ENV === 'production',
-    httpOnly: true,
-  },
-  size: 64,
-  ignoredMethods: ['GET', 'HEAD', 'OPTIONS'] as const,
-});
+// CRIT-4: CSRF protection — defined in csrf.ts (shared with routes that need per-route CSRF)
+// See csrf.ts for the doubleCsrf configuration
 
 // MED-01 Fix: Global rate limiter for all endpoints
 const globalLimiter = rateLimit({
@@ -95,9 +90,10 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// MED-06 Fix: Request timeout — 10 seconds
+// MED-06 Fix: Request timeout — 30 seconds (increased for file uploads)
 app.use((req, res, next) => {
-  res.setTimeout(10000, () => {
+  const timeout = req.path.includes('/cats') || req.path.includes('/donations') ? 30000 : 10000;
+  res.setTimeout(timeout, () => {
     if (!res.headersSent) {
       res.status(504).json({ success: false, error: { code: 'TIMEOUT', message: 'Request timed out' } });
     }
@@ -105,8 +101,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// 1mb limit to prevent abuse
-app.use(express.json({ limit: '1mb' }));
+// 2mb limit to prevent abuse (increased from 1mb for better compatibility)
+app.use(express.json({ limit: '2mb' }));
 
 
 
@@ -120,53 +116,46 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
+// Storage health check — diagnose Supabase Storage connectivity
+app.get('/api/health/storage', async (_req, res) => {
+  const storageStatus = await getStorageStatus();
+  const statusCode = storageStatus.connected && storageStatus.bucketExists && storageStatus.bucketPublic ? 200 : 503;
+  return res.status(statusCode).json({ success: statusCode === 200, data: storageStatus });
+});
+
 // CRIT-4: CSRF token endpoint — frontend calls this to obtain a token
-app.get('/api/csrf-token', (req, res) => {
+// C-2 FIX: Also ensure the per-browser session ID cookie is set
+// IMPORTANT: optionalAuthMiddleware sets req.user if a valid JWT cookie exists,
+// so the CSRF token is generated with the user's ID as the session identifier.
+// This matches the identifier used when CSRF is validated on subsequent
+// authenticated requests (via authMiddleware + csrfProtection), preventing
+// "CSRF_INVALID" 403 errors caused by session identifier mismatch.
+app.get('/api/csrf-token', optionalAuthMiddleware, (req, res) => {
   try {
+    ensureSessionCookie(req, res);
     const token = generateCsrfToken(req, res);
+    if (!token) {
+      logger.warn('CSRF token generation returned empty string — check CSRF_SECRET or JWT_SECRET env vars');
+    }
     return res.json({ success: true, data: { token } });
-  } catch {
+  } catch (err) {
+    logger.error({ err }, 'CSRF token generation failed');
     return res.json({ success: true, data: { token: '' } });
   }
 });
 
-// CRIT-4: CSRF protection — MONITORING mode (logs but does not block).
-// The frontend sends CSRF tokens via X-CSRF-Token header, and the double-submit
-// cookie pattern is used. However, some browsers block third-party cookies which
-// can break the CSRF flow in cross-origin deployments (Vercel ↔ Render).
-// To ensure the app remains functional, CSRF is in monitoring mode:
-//   - If the token is present and valid → request proceeds normally
-//   - If the token is missing or invalid → a warning is logged but the request
-//     still proceeds (no 403 block)
-// To enable full enforcement later, replace csrfMonitoringMiddleware with
-// doubleCsrfProtection in the app.use() lines below.
-const csrfMonitoringMiddleware: express.RequestHandler = (req, _res, next) => {
-  try {
-    // Run the actual CSRF protection to see if it would pass
-    doubleCsrfProtection(req, _res, (err) => {
-      if (err) {
-        // CSRF validation failed — log but don't block
-        logger.warn({
-          method: req.method,
-          path: req.path,
-          hasCsrfCookie: !!req.cookies?.['x-csrf-token'],
-          hasCsrfHeader: !!req.headers['x-csrf-token'],
-        }, 'CSRF validation failed (monitoring mode — not blocking)');
-      }
-      // Always proceed — monitoring mode never blocks
-      next();
-    });
-  } catch {
-    // If the CSRF middleware throws, just proceed
-    next();
-  }
-};
-
-app.use('/api/cats', csrfMonitoringMiddleware);
-app.use('/api/emergencies', csrfMonitoringMiddleware);
-app.use('/api/donations', csrfMonitoringMiddleware);
-app.use('/api/volunteers', csrfMonitoringMiddleware);
-app.use('/api/map', csrfMonitoringMiddleware);
+// CRIT-4: CSRF protection enforced on all state-changing routes.
+// /api/auth is intentionally excluded — login/register happen before a CSRF token exists.
+// However, admin auth routes (user management) do need CSRF — applied per-route in auth.routes.ts
+//
+// IMPORTANT: optionalAuthMiddleware runs before csrfProtection so that req.user is
+// available for getSessionIdentifier(). This ensures the CSRF token is validated
+// with the same session identifier (user ID) it was generated with.
+app.use('/api/cats', optionalAuthMiddleware, csrfProtection);
+app.use('/api/emergencies', optionalAuthMiddleware, csrfProtection);
+app.use('/api/donations', optionalAuthMiddleware, csrfProtection);
+app.use('/api/map', optionalAuthMiddleware, csrfProtection);
+app.use('/api/volunteers', optionalAuthMiddleware, csrfProtection);
 
 // mount each team member's routes
 app.use('/api/auth', authRoutes);
@@ -179,5 +168,8 @@ app.use('/api/volunteers', volunteersRoutes);
 // catch-all: 404 then error handler
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// Auto-create Supabase bucket on startup (non-blocking)
+ensureBucketExists().catch(() => {});
 
 export default app;
