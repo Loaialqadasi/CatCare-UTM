@@ -8,9 +8,13 @@ export const db = new pg.Pool({
   user: env.DATABASE_USER,
   password: env.DATABASE_PASSWORD,
   database: env.DATABASE_NAME,
-  ssl: {
-    rejectUnauthorized: false
-  },
+  // C-5 FIX: Enable SSL certificate verification in production.
+  // rejectUnauthorized: false was a security risk enabling MITM attacks.
+  // In production, use the system CA bundle to verify the server certificate.
+  // In development (localhost), SSL may not be available so we disable it.
+  ssl: env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: true }
+    : false,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,

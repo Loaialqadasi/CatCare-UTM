@@ -1,5 +1,5 @@
 -- ============================================
--- Migration 010: Create refresh_tokens table
+-- Migration 011: Create refresh_tokens table
 -- ============================================
 -- Stores refresh token hashes so they can be invalidated on logout,
 -- password change, or admin action. Without server-side tracking,

@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { useState, useMemo, useEffect, Component, ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { fetchCats, fetchEmergencies } from '@/lib/api-client';
-import { Search, MapPin, Building2, X } from 'lucide-react';
+import { Search, Building2, X, AlertTriangle } from 'lucide-react';
 import type { Cat, EmergencyReport, HealthStatus } from '@/lib/types';
 
 // UTM Campus center
@@ -44,15 +44,15 @@ const buildingTypeLabels: Record<string, string> = {
 };
 
 const buildingTypeEmojis: Record<string, string> = {
-  gate: '🚪',
-  admin: '🏛️',
-  library: '📚',
-  faculty: '🎓',
-  residential: '🏠',
-  mosque: '🕌',
-  sports: '⚽',
-  food: '🍽️',
-  transport: '🚌',
+  gate: '\u{1F6AA}',
+  admin: '\u{1F3DB}\uFE0F',
+  library: '\u{1F4DA}',
+  faculty: '\u{1F393}',
+  residential: '\u{1F3E0}',
+  mosque: '\u{1F54C}',
+  sports: '\u26BD',
+  food: '\u{1F37D}\uFE0F',
+  transport: '\u{1F68C}',
 };
 
 interface UTMBuilding {
@@ -63,22 +63,76 @@ interface UTMBuilding {
   desc: string;
 }
 
+// Use next/dynamic with ssr:false to completely skip SSR for the Leaflet map.
+// This prevents "window is not defined" errors because Leaflet requires the browser DOM.
+// A loading placeholder is shown while the map component loads on the client.
+const UTMMap = dynamic(
+  () => import('./utm-map').then((mod) => mod.UTMMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full bg-muted/30">
+        <p className="text-muted-foreground">Loading map...</p>
+      </div>
+    ),
+  }
+);
+
+// Also dynamically import just the building data (no Leaflet dependency)
+const buildingDataPromise = import('./utm-map').then((mod) => mod.utmBuildings);
+
+// Error boundary for the map — catches render crashes (e.g. Leaflet errors)
+// and shows a friendly message instead of killing the entire page.
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class MapErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full bg-muted/30 gap-3 p-6 text-center">
+          <AlertTriangle className="h-10 w-10 text-amber-500" />
+          <h3 className="font-semibold text-lg">Map failed to load</h3>
+          <p className="text-sm text-muted-foreground max-w-md">
+            The interactive map encountered an error. This can happen if the map
+            service is temporarily unavailable. Please try refreshing the page.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            Try Again
+          </Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function MapPage() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [emergencies, setEmergencies] = useState<EmergencyReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [MapComponent, setMapComponent] = useState<React.ComponentType<{ center: [number, number]; cats: Cat[]; emergencies: EmergencyReport[]; selectedBuilding?: string | null }> | null>(null);
   const [buildings, setBuildings] = useState<UTMBuilding[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('');
 
+  // Load buildings data on client only
   useEffect(() => {
-    // Dynamic import to avoid SSR issues with Leaflet
-    import('./utm-map').then((mod) => {
-      setMapComponent(() => mod.UTMMap);
-      setBuildings(mod.utmBuildings);
-    });
+    buildingDataPromise.then(setBuildings);
   }, []);
 
   useEffect(() => {
@@ -136,17 +190,19 @@ export default function MapPage() {
         <div className="lg:col-span-3">
           <Card className="rounded-xl border-border/50 overflow-hidden">
             <div className="h-[550px] w-full">
-              {loading || !MapComponent ? (
+              {loading ? (
                 <div className="flex items-center justify-center h-full bg-muted/30">
-                  <p className="text-muted-foreground">Loading map...</p>
+                  <p className="text-muted-foreground">Loading map data...</p>
                 </div>
               ) : (
-                <MapComponent
-                  center={UTM_CENTER}
-                  cats={catsWithCoords}
-                  emergencies={emergWithCoords}
-                  selectedBuilding={selectedBuilding}
-                />
+                <MapErrorBoundary>
+                  <UTMMap
+                    center={UTM_CENTER}
+                    cats={catsWithCoords}
+                    emergencies={emergWithCoords}
+                    selectedBuilding={selectedBuilding}
+                  />
+                </MapErrorBoundary>
               )}
             </div>
           </Card>

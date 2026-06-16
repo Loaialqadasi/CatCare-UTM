@@ -5,16 +5,37 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Cat, EmergencyReport, HealthStatus } from '@/lib/types';
 
-// Fix Leaflet default marker icons
-const catIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+const healthColors: Record<HealthStatus, string> = {
+  healthy: '#10b981',
+  needs_attention: '#f59e0b',
+  injured: '#ef4444',
+  unknown: '#6b7280',
+};
+
+/**
+ * Convert an SVG string to a data-URI that is safe for Leaflet icon URLs.
+ * IMPORTANT: Do NOT use btoa() here — it only handles Latin1 characters and
+ * will crash on emoji or other Unicode (e.g. the cat emoji 🐱 in the SVG).
+ * Instead we use encodeURIComponent which handles all of Unicode correctly.
+ */
+function svgToDataUri(svg: string): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+// Custom cat icon with health status color
+function createCatIcon(healthStatus: HealthStatus): L.Icon {
+  const color = healthColors[healthStatus];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40" width="28" height="35">
+    <path d="M16 0C9.4 0 4 5.4 4 12c0 9 12 24 12 24s12-15 12-24C28 5.4 22.6 0 16 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/>
+    <text x="16" y="16" text-anchor="middle" font-size="14" fill="#fff">\u{1F431}</text>
+  </svg>`;
+  return L.icon({
+    iconUrl: svgToDataUri(svg),
+    iconSize: [28, 35],
+    iconAnchor: [14, 35],
+    popupAnchor: [0, -30],
+  });
+}
 
 // Custom colored building icons
 function createBuildingIcon(color: string): L.Icon {
@@ -23,20 +44,26 @@ function createBuildingIcon(color: string): L.Icon {
     <circle cx="12" cy="12" r="5" fill="#fff"/>
   </svg>`;
   return L.icon({
-    iconUrl: `data:image/svg+xml;base64,${btoa(svg)}`,
+    iconUrl: svgToDataUri(svg),
     iconSize: [24, 36],
     iconAnchor: [12, 36],
     popupAnchor: [0, -30],
-    iconRetinaUrl: '',
   });
 }
 
-const healthColors: Record<HealthStatus, string> = {
-  healthy: '#10b981',
-  needs_attention: '#f59e0b',
-  injured: '#ef4444',
-  unknown: '#6b7280',
-};
+// Emergency icon (red pulsing-style pin)
+function createEmergencyIcon(): L.Icon {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="24" height="36">
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="#ef4444" stroke="#991b1b" stroke-width="1.5"/>
+    <text x="12" y="15" text-anchor="middle" font-size="12" fill="#fff">!</text>
+  </svg>`;
+  return L.icon({
+    iconUrl: svgToDataUri(svg),
+    iconSize: [24, 36],
+    iconAnchor: [12, 36],
+    popupAnchor: [0, -30],
+  });
+}
 
 // UTM Campus landmarks and buildings
 export const utmBuildings = [
@@ -99,6 +126,28 @@ function FlyToBuilding({ lat, lng }: { lat: number; lng: number }) {
 export function UTMMap({ center, cats, emergencies, selectedBuilding }: UTMMapProps) {
   const selected = selectedBuilding ? utmBuildings.find(b => b.name === selectedBuilding) : null;
 
+  // Pre-create building icons (these don't change, so create once per render)
+  const buildingIconCache = new Map<string, L.Icon>();
+  function getBuildingIcon(type: string): L.Icon {
+    if (!buildingIconCache.has(type)) {
+      const color = buildingTypeColors[type] || '#3b82f6';
+      buildingIconCache.set(type, createBuildingIcon(color));
+    }
+    return buildingIconCache.get(type)!;
+  }
+
+  // Pre-create cat icons by health status
+  const catIconCache = new Map<HealthStatus, L.Icon>();
+  function getCatIcon(status: HealthStatus): L.Icon {
+    if (!catIconCache.has(status)) {
+      catIconCache.set(status, createCatIcon(status));
+    }
+    return catIconCache.get(status)!;
+  }
+
+  // Create emergency icon once
+  const emergencyIcon = createEmergencyIcon();
+
   return (
     <MapContainer
       center={center}
@@ -116,19 +165,18 @@ export function UTMMap({ center, cats, emergencies, selectedBuilding }: UTMMapPr
       {/* UTM Campus Building Markers */}
       {utmBuildings.map((building, idx) => {
         const color = buildingTypeColors[building.type] || '#3b82f6';
-        const icon = createBuildingIcon(color);
         return (
           <Marker
             key={`building-${idx}`}
             position={[building.lat, building.lng]}
-            icon={icon}
+            icon={getBuildingIcon(building.type)}
           >
             <Popup>
               <div className="min-w-[200px]">
                 <h3 className="font-bold text-sm" style={{ color }}>{building.name}</h3>
                 <p className="text-xs text-gray-500 mt-1">{building.desc}</p>
                 <p className="text-[10px] text-gray-400 mt-1">
-                  📍 {building.lat.toFixed(4)}, {building.lng.toFixed(4)}
+                  {building.lat.toFixed(4)}, {building.lng.toFixed(4)}
                 </p>
               </div>
             </Popup>
@@ -136,58 +184,77 @@ export function UTMMap({ center, cats, emergencies, selectedBuilding }: UTMMapPr
         );
       })}
 
-      {/* Cat markers */}
-      {cats.map((cat) => (
-        <Marker
-          key={`cat-${cat.id}`}
-          position={[cat.latitude!, cat.longitude!]}
-          icon={catIcon}
-        >
-          <Popup>
-            <div className="min-w-[180px]">
-              {cat.photoUrl && (
-                <img
-                  src={cat.photoUrl}
-                  alt={cat.nickname}
-                  className="w-full h-24 object-cover rounded mb-2"
-                />
-              )}
-              <h3 className="font-bold text-sm">{cat.nickname}</h3>
-              <p className="text-xs text-gray-600">{cat.locationName}</p>
-              <p className="text-xs mt-1">
-                Status: <span style={{ color: healthColors[cat.healthStatus] }} className="font-medium capitalize">
-                  {cat.healthStatus.replace('_', ' ')}
-                </span>
-              </p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {/* Cat markers — render registered cats from the database */}
+      {cats.map((cat) => {
+        // Defensive: ensure coordinates are valid numbers
+        const lat = Number(cat.latitude);
+        const lng = Number(cat.longitude);
+        if (isNaN(lat) || isNaN(lng)) return null;
 
-      {/* Emergency markers */}
-      {emergencies.map((emerg) => (
-        <CircleMarker
-          key={`emerg-${emerg.id}`}
-          center={[emerg.latitude!, emerg.longitude!]}
-          radius={12}
-          fillColor="#ef4444"
-          color="#991b1b"
-          weight={2}
-          opacity={0.9}
-          fillOpacity={0.5}
-        >
-          <Popup>
-            <div className="min-w-[180px]">
-              <h3 className="font-bold text-sm text-red-600">{emerg.title}</h3>
-              <p className="text-xs text-gray-600">{emerg.locationName}</p>
-              <p className="text-xs mt-1">
-                Priority: <span className="font-medium capitalize">{emerg.priority}</span>
-              </p>
-              <p className="text-xs">{emerg.description}</p>
-            </div>
-          </Popup>
-        </CircleMarker>
-      ))}
+        return (
+          <Marker
+            key={`cat-${cat.id}`}
+            position={[lat, lng]}
+            icon={getCatIcon(cat.healthStatus)}
+          >
+            <Popup>
+              <div className="min-w-[200px]">
+                {cat.photoUrl && (
+                  <img
+                    src={cat.photoUrl}
+                    alt={cat.nickname}
+                    className="w-full h-28 object-cover rounded-lg mb-2"
+                  />
+                )}
+                <h3 className="font-bold text-sm flex items-center gap-1">
+                  {cat.nickname}
+                </h3>
+                <p className="text-xs text-gray-600 flex items-center gap-1 mt-1">
+                  {cat.locationName}
+                </p>
+                <p className="text-xs mt-1">
+                  Status: <span style={{ color: healthColors[cat.healthStatus] }} className="font-medium capitalize">
+                    {cat.healthStatus.replace('_', ' ')}
+                  </span>
+                </p>
+                <a
+                  href={`/cats/${cat.id}`}
+                  className="inline-block mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  View Details
+                </a>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+
+      {/* Emergency markers — render active emergencies from the database */}
+      {emergencies.map((emerg) => {
+        // Defensive: ensure coordinates are valid numbers
+        const lat = Number(emerg.latitude);
+        const lng = Number(emerg.longitude);
+        if (isNaN(lat) || isNaN(lng)) return null;
+
+        return (
+          <Marker
+            key={`emerg-${emerg.id}`}
+            position={[lat, lng]}
+            icon={emergencyIcon}
+          >
+            <Popup>
+              <div className="min-w-[180px]">
+                <h3 className="font-bold text-sm text-red-600">{emerg.title}</h3>
+                <p className="text-xs text-gray-600">{emerg.locationName}</p>
+                <p className="text-xs mt-1">
+                  Priority: <span className="font-medium capitalize">{emerg.priority}</span>
+                </p>
+                <p className="text-xs">{emerg.description}</p>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
     </MapContainer>
   );
 }

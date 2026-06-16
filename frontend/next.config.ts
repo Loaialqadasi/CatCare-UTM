@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   // CRIT-07 Fix: Remove ignoreBuildErrors — fix underlying TS errors instead
   // CRIT-08 Fix: Enable React Strict Mode to catch real bugs
   reactStrictMode: true,
@@ -28,6 +27,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "placecats.com",
+      },
+      // Render backend — serves uploaded cat/donation photos
+      {
+        protocol: "https",
+        hostname: "catcare-backend.onrender.com",
       },
     ],
   },
