@@ -27,9 +27,9 @@ export const emergencyIdParamSchema = z.object({
   id: z.coerce.number().int().positive()
 });
 
+// FIX: proofImageUrl removed from body — it now comes from the uploaded file via multer
 export const submitProofSchema = z.object({
   proofNotes: z.string().min(5, 'Proof notes must be at least 5 characters').max(2000).trim(),
-  proofImageUrl: z.string().url().optional().nullable(),
 });
 
 export const updateEmergencyStatusSchema = z.object({

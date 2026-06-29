@@ -19,6 +19,7 @@ import type {
   Volunteer,
   CreateVolunteerFormData,
   CareHistoryEntry,
+  CareType,
 } from './types';
 
 // API URL — env var with local development fallback
@@ -100,6 +101,7 @@ interface RawCareHistory {
   description: string;
   performedBy: string;
   performedByUserId: number | null;
+  photoUrl: string | null;
   createdAt: string;
 }
 
@@ -184,6 +186,7 @@ function normalizeCareHistory(raw: RawCareHistory): CareHistoryEntry {
     description: raw.description,
     performedBy: raw.performedBy,
     performedByUserId: raw.performedByUserId != null ? String(raw.performedByUserId) : raw.performedByUserId,
+    photoUrl: raw.photoUrl ?? null,
     createdAt: raw.createdAt,
   };
 }
@@ -496,20 +499,6 @@ export async function updateCat(
   return normalizeCat(json.data);
 }
 
-export async function updateCatHealthStatus(
-  id: string,
-  healthStatus: string,
-): Promise<Cat> {
-  const res = await apiFetch(`${API_BASE}/cats/${id}/health`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ healthStatus }),
-  });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error?.message || 'Failed to update cat health status');
-  return normalizeCat(json.data);
-}
-
 export async function deleteCat(id: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/cats/${id}`, {
     method: 'DELETE',
@@ -594,12 +583,27 @@ export async function updateEmergencyStatus(
 export async function submitEmergencyProof(
   id: string,
   proofNotes: string,
-  proofImageUrl?: string | null,
+  proofImage?: File | null,
 ): Promise<EmergencyReport> {
+  // If there's an image, use FormData; otherwise use JSON
+  if (proofImage) {
+    const formData = new FormData();
+    formData.append('proofNotes', proofNotes);
+    formData.append('proofImage', proofImage);
+    const res = await apiFetch(`${API_BASE}/emergencies/${id}/proof`, {
+      method: 'PATCH',
+      body: formData,
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error?.message || 'Failed to submit proof');
+    return normalizeEmergency(json.data);
+  }
+
+  // No image — send as JSON
   const res = await apiFetch(`${API_BASE}/emergencies/${id}/proof`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ proofNotes, proofImageUrl }),
+    body: JSON.stringify({ proofNotes }),
   });
   const json = await res.json();
   if (!json.success) throw new Error(json.error?.message || 'Failed to submit proof');
@@ -826,6 +830,43 @@ export async function fetchCareHistory(catId: string): Promise<CareHistoryEntry[
   const json = await res.json();
   if (!json.success) throw new Error(json.error?.message || 'Failed to fetch care history');
   return json.data.map(normalizeCareHistory);
+}
+
+// --- NEW: Volunteer care history recording ---
+
+export async function createCareHistory(
+  catId: string,
+  data: { careType: string; description: string; photo?: File },
+): Promise<CareHistoryEntry> {
+  const formData = new FormData();
+  formData.append('careType', data.careType);
+  formData.append('description', data.description);
+  if (data.photo) {
+    formData.append('photo', data.photo);
+  }
+  const res = await apiFetch(`${API_BASE}/cats/${catId}/care-history`, {
+    method: 'POST',
+    body: formData,
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error?.message || 'Failed to record care history');
+  return normalizeCareHistory(json.data);
+}
+
+// --- NEW: Update cat health status (volunteer+) ---
+
+export async function updateCatHealthStatus(
+  id: string,
+  healthStatus: string,
+): Promise<Cat> {
+  const res = await apiFetch(`${API_BASE}/cats/${id}/health`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ healthStatus }),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error?.message || 'Failed to update cat health status');
+  return normalizeCat(json.data);
 }
 
 // --- admin: user management ---

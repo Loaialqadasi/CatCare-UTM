@@ -68,5 +68,16 @@ export interface CareHistoryEntry {
   description: string;
   performedBy: string;
   performedByUserId: number | null;
+  photoUrl: string | null;
   createdAt: string;
+}
+
+// FIX: New input type for volunteers to record care history
+export interface CreateCareHistoryInput {
+  catId: number;
+  careType: CareType;
+  description: string;
+  performedBy: string;
+  performedByUserId: number;
+  photoUrl?: string | null;
 }

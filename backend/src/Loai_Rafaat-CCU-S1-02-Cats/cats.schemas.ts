@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const healthStatusEnum = z.enum(['healthy', 'needs_attention', 'injured', 'unknown']);
 export const ownershipTagEnum = z.enum(['stray', 'adopted', 'campus_managed', 'unknown']);
+export const careTypeEnum = z.enum(['feeding', 'medical', 'grooming', 'shelter', 'rescue', 'other']);
 
 export const createCatSchema = z.object({
   nickname: z.string().min(2).max(100).trim(),

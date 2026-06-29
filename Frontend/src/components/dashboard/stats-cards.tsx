@@ -5,10 +5,10 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Cat, AlertTriangle, HeartPulse, ShieldAlert, Heart, Clock } from 'lucide-react';
+import { Cat, AlertTriangle, HeartPulse, ShieldAlert, Heart, Clock, ClipboardCheck, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-import { fetchCats, fetchEmergencies, fetchPriorityFeed, fetchDonationSummary } from '@/lib/api-client';
+import { fetchCats, fetchEmergencies, fetchPriorityFeed, fetchDonationSummary, fetchMyVolunteerings } from '@/lib/api-client';
 import { useAppStore } from '@/lib/store';
 
 interface StatCardProps {
@@ -44,7 +44,7 @@ function StatCard({ title, value, icon, color, bgColor, description, delay = 0 }
 
 function LoadingSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+    <div className={cn('grid gap-4', count <= 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : count <= 6 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-6' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4')}>
       {Array.from({ length: count }).map((_, i) => (
         <Card key={i} className="rounded-xl">
           <CardContent className="p-5">
@@ -66,6 +66,7 @@ function LoadingSkeleton({ count = 6 }: { count?: number }) {
 export function StatsCards() {
   const { user } = useAppStore();
   const isAdmin = user?.role === 'admin';
+  const isVolunteerPlus = user?.role === 'volunteer' || user?.role === 'manager' || user?.role === 'admin';
   const [stats, setStats] = useState({
     totalCats: 0,
     openEmergencies: 0,
@@ -73,12 +74,13 @@ export function StatsCards() {
     criticalReports: 0,
     totalDonations: 0,
     pendingDonations: 0,
+    myCareRecords: 0,
+    myVolunteerStatus: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadStats() {
-      // Build the list of fetches; only fetch donation summary for admin
       const fetches: Promise<any>[] = [
         fetchCats({ pageSize: 100 }),
         fetchEmergencies({ pageSize: 100 }),
@@ -87,6 +89,10 @@ export function StatsCards() {
       if (isAdmin) {
         fetches.push(fetchDonationSummary());
       }
+      // FIX: Volunteers see their own volunteer applications count
+      if (isVolunteerPlus) {
+        fetches.push(fetchMyVolunteerings().catch(() => []));
+      }
 
       const results = await Promise.allSettled(fetches);
 
@@ -94,8 +100,8 @@ export function StatsCards() {
       const emergenciesRes = results[1].status === 'fulfilled' ? results[1].value : null;
       const priorityFeed = results[2].status === 'fulfilled' ? results[2].value : null;
       const donationSummary = isAdmin && results[3]?.status === 'fulfilled' ? results[3].value : null;
+      const myVolApps = isVolunteerPlus && results[isAdmin ? 4 : 3]?.status === 'fulfilled' ? results[isAdmin ? 4 : 3].value : [];
 
-      // Log any failures for debugging
       results.forEach((r, i) => {
         if (r.status === 'rejected') {
           console.warn(`Stats fetch failed for index ${i}:`, r.reason);
@@ -111,17 +117,35 @@ export function StatsCards() {
         criticalReports: priorityFeed?.filter((e) => e.priority === 'critical' || e.priority === 'high').length ?? 0,
         totalDonations: donationSummary?.total ?? 0,
         pendingDonations: donationSummary?.pending ?? 0,
+        myCareRecords: 0, // Will be populated from care history if available
+        myVolunteerStatus: Array.isArray(myVolApps) ? myVolApps.filter((v: any) => v.status === 'approved').length : 0,
       });
 
       setLoading(false);
     }
 
     loadStats();
-  }, [isAdmin]);
+  }, [isAdmin, isVolunteerPlus]);
 
-  if (loading) return <LoadingSkeleton count={isAdmin ? 6 : 4} />;
+  // Calculate card count for grid and skeleton
+  const cardCount = isAdmin ? 6 : isVolunteerPlus ? 5 : 4;
 
-  // Non-admin users don't see donation stat cards
+  if (loading) return <LoadingSkeleton count={cardCount} />;
+
+  // Volunteer-specific cards — show extra stats for volunteers
+  const volunteerCards = isVolunteerPlus && !isAdmin ? (
+    <StatCard
+      title="Active Volunteer"
+      value={stats.myVolunteerStatus > 0 ? '✓' : '—'}
+      icon={<ClipboardCheck className="h-5 w-5" />}
+      color="text-violet-600 dark:text-violet-400"
+      bgColor="bg-violet-100 dark:bg-violet-950/40"
+      description="Your approved applications"
+      delay={0.35}
+    />
+  ) : null;
+
+  // Admin donation cards
   const donationCards = isAdmin ? (
     <>
       <StatCard
@@ -146,7 +170,7 @@ export function StatsCards() {
   ) : null;
 
   return (
-    <div className={cn('grid gap-4', isAdmin ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-6' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4')}>
+    <div className={cn('grid gap-4', cardCount <= 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : cardCount <= 5 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-6')}>
       <StatCard
         title="Total Cats"
         value={stats.totalCats}
@@ -183,6 +207,7 @@ export function StatsCards() {
         description="Critical & high priority"
         delay={0.3}
       />
+      {volunteerCards}
       {donationCards}
     </div>
   );

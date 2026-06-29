@@ -3,6 +3,7 @@ import { authMiddleware } from '../Layth_Amgad-CCU-S1-01-Auth/auth.middleware.js
 import { managerMiddleware, adminMiddleware, volunteerMiddleware } from '../Layth_Amgad-CCU-S1-28-Donations/admin.middleware.js';
 import { csrfProtection } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/csrf.js';
 import { validate } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/validate.middleware.js';
+import { upload } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/upload.js';
 import { emergenciesController } from './emergencies.controller.js';
 import {
   createEmergencySchema,
@@ -24,7 +25,6 @@ emergenciesRoutes.get('/', validate({ query: listEmergenciesQuerySchema }), emer
 emergenciesRoutes.get('/priority-feed', emergenciesController.priorityFeed);
 
 // MED-08 Fix: Change emergency status — now requires manager role
-// Managers and admins can change emergency status
 emergenciesRoutes.patch(
   '/:id/status',
   authMiddleware,
@@ -33,11 +33,13 @@ emergenciesRoutes.patch(
   emergenciesController.updateStatus
 );
 
-// Submit fix proof — volunteer or above can submit proof
+// FIX: Submit fix proof — volunteer or above, with optional image upload
+// Uses multer to accept a proofImage file, uploaded to Supabase storage
 emergenciesRoutes.patch(
   '/:id/proof',
   authMiddleware,
   volunteerMiddleware,
+  upload.single('proofImage'),
   validate({ params: emergencyIdParamSchema, body: submitProofSchema }),
   emergenciesController.submitProof
 );

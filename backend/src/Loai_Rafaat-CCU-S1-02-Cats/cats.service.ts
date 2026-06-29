@@ -1,7 +1,7 @@
-import { NotFoundError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
+import { NotFoundError, ValidationError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
 import { buildPagination, parsePagination } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/utils.js';
 import { catsRepository } from './cats.repository.js';
-import { Cat, CatListQuery, CatListResult, CatCursorListResult, CreateCatInput, UpdateCatInput, CareHistoryEntry } from './cats.types.js';
+import { Cat, CatListQuery, CatListResult, CatCursorListResult, CreateCatInput, UpdateCatInput, CareHistoryEntry, CreateCareHistoryInput } from './cats.types.js';
 
 export const catsService = {
   async createCat(input: CreateCatInput): Promise<Cat> {
@@ -53,6 +53,18 @@ export const catsService = {
       throw new NotFoundError('Cat not found');
     }
     return catsRepository.getCareHistory(catId);
+  },
+
+  // FIX: New method — volunteers can record care history
+  async createCareHistory(input: CreateCareHistoryInput): Promise<CareHistoryEntry> {
+    const cat = await catsRepository.findById(input.catId);
+    if (!cat) {
+      throw new NotFoundError('Cat not found');
+    }
+    if (!input.description || input.description.trim().length < 3) {
+      throw new ValidationError('Description must be at least 3 characters', { field: 'description' });
+    }
+    return catsRepository.createCareHistory(input);
   },
 
   async softDeleteCat(id: number): Promise<void> {

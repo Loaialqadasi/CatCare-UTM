@@ -3,7 +3,7 @@ import { AuthenticationError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation
 import { success } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/response.js';
 import { uploadImage } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/upload.js';
 import { catsService } from './cats.service.js';
-import { CatListQuery, CreateCatInput, UpdateCatInput } from './cats.types.js';
+import { CatListQuery, CreateCatInput, UpdateCatInput, CreateCareHistoryInput } from './cats.types.js';
 
 export const catsController = {
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -14,7 +14,7 @@ export const catsController = {
       const payload = req.body as Omit<CreateCatInput, 'createdByUserId' | 'photoUrl'>;
       let photoUrl: string | null = null;
 
-      // If a file was uploaded, send it to Cloudinary (or use placeholder fallback)
+      // If a file was uploaded, send it to storage
       if (req.file) {
         const result = await uploadImage(req.file.buffer);
         photoUrl = result.url;
@@ -66,6 +66,36 @@ export const catsController = {
     }
   },
 
+  // FIX: New endpoint — volunteers can record care history with optional photo
+  async createCareHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        throw new AuthenticationError('Missing or invalid token');
+      }
+      const catId = Number(req.params.id);
+      const { careType, description } = req.body;
+
+      // If a photo was uploaded, send it to storage
+      let photoUrl: string | null = null;
+      if (req.file) {
+        const result = await uploadImage(req.file.buffer, 'catcare-utm/care-history');
+        photoUrl = result.url;
+      }
+
+      const entry = await catsService.createCareHistory({
+        catId,
+        careType,
+        description,
+        performedBy: req.user.fullName || req.user.email,
+        performedByUserId: req.user.id,
+        photoUrl,
+      });
+      success(res, entry, 201);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async softDelete(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = Number(req.params.id);
@@ -109,7 +139,6 @@ export const catsController = {
   },
 
   // FIX: New endpoint for volunteers to update only the cat's health status
-  // Volunteers cannot change other fields — this is a restricted version of the full update
   async updateHealthStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = Number(req.params.id);

@@ -20,6 +20,7 @@ import {
   Users,
   Map,
   HandHeart,
+  Activity,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -100,6 +101,15 @@ const navItems: NavItem[] = [
     section: 'Actions',
     route: '/donations/new',
   },
+  // FIX: New volunteer-only action — Record Care
+  {
+    id: 'record-care',
+    label: 'Record Care',
+    icon: <Activity className="h-5 w-5" />,
+    section: 'Actions',
+    route: '/cats',  // Goes to cats list where they can click a cat and record care
+    minRole: 'volunteer',
+  },
   {
     id: 'admin-donations',
     label: 'Review Donations',
@@ -173,9 +183,7 @@ function SidebarContent({
     useAppStore.getState().setSidebarOpen(false);
   };
 
-  // Determine active state based on pathname
   const isActive = (item: NavItem): boolean => {
-    // Exact match for top-level routes
     if (item.route === '/dashboard' && pathname === '/dashboard') return true;
     if (item.route === '/cats' && pathname === '/cats') return true;
     if (item.route === '/cats/new' && pathname === '/cats/new') return true;
@@ -186,16 +194,13 @@ function SidebarContent({
     if (item.route === '/map' && pathname === '/map') return true;
     if (item.route === '/volunteers' && pathname === '/volunteers') return true;
     if (item.route === '/profile' && pathname === '/profile') return true;
-    // Detail pages: highlight the parent list item
     if (item.id === 'cats' && pathname.match(/^\/cats\/\d+$/)) return true;
     if (item.id === 'emergencies' && pathname.match(/^\/emergencies\/\d+$/)) return true;
     if (item.id === 'my-donations' && pathname.match(/^\/donations\/\d+$/)) return true;
-    // Admin routes
     if (item.route.startsWith('/admin/') && pathname.startsWith(item.route)) return true;
     return false;
   };
 
-  // Filter items based on role — rank-based access control
   const visibleItems = navItems.filter((item) => {
     if (item.minRole) {
       const requiredRank = ROLE_RANK[item.minRole] ?? 0;
@@ -303,7 +308,6 @@ function SidebarContent({
           </div>
         </div>
 
-        {/* Logout Button */}
         {collapsed ? (
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
@@ -345,7 +349,6 @@ function SidebarContent({
 export function Sidebar({ collapsed, onToggleCollapse }: { collapsed: boolean; onToggleCollapse: () => void }) {
   return (
     <>
-      {/* Desktop Sidebar */}
       <aside
         className={cn(
           'hidden lg:flex flex-col fixed left-0 top-0 h-screen bg-card border-r border-border z-40 transition-all duration-300',
@@ -366,7 +369,6 @@ export function Sidebar({ collapsed, onToggleCollapse }: { collapsed: boolean; o
         </button>
       </aside>
 
-      {/* Mobile Sidebar (Sheet) */}
       <MobileSidebar />
     </>
   );

@@ -1,7 +1,7 @@
 import { db } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/database.js';
 import { DatabaseError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
 import { escapeLike } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/utils.js';
-import { Cat, CatHealthStatus, CreateCatInput, UpdateCatInput, CareHistoryEntry } from './cats.types.js';
+import { Cat, CatHealthStatus, CreateCatInput, UpdateCatInput, CareHistoryEntry, CreateCareHistoryInput } from './cats.types.js';
 
 interface CatRow {
   id: number;
@@ -157,9 +157,10 @@ export const catsRepository = {
       description: string;
       performed_by: string;
       performed_by_user_id: number | null;
+      photo_url: string | null;
       created_at: string;
     }>(
-      `SELECT id, cat_id, care_type, description, performed_by, performed_by_user_id, created_at
+      `SELECT id, cat_id, care_type, description, performed_by, performed_by_user_id, photo_url, created_at
        FROM care_history
        WHERE cat_id = $1
        ORDER BY created_at DESC`,
@@ -172,8 +173,38 @@ export const catsRepository = {
       description: row.description,
       performedBy: row.performed_by,
       performedByUserId: row.performed_by_user_id,
+      photoUrl: row.photo_url,
       createdAt: row.created_at
     }));
+  },
+
+  // FIX: New method — volunteers can record care history entries
+  async createCareHistory(input: CreateCareHistoryInput): Promise<CareHistoryEntry> {
+    const { rows } = await db.query<{
+      id: number;
+      cat_id: number;
+      care_type: string;
+      description: string;
+      performed_by: string;
+      performed_by_user_id: number | null;
+      photo_url: string | null;
+      created_at: string;
+    }>(
+      `INSERT INTO care_history (cat_id, care_type, description, performed_by, performed_by_user_id, photo_url)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, cat_id, care_type, description, performed_by, performed_by_user_id, photo_url, created_at`,
+      [input.catId, input.careType, input.description, input.performedBy, input.performedByUserId, input.photoUrl ?? null]
+    );
+    return {
+      id: rows[0].id,
+      catId: rows[0].cat_id,
+      careType: rows[0].care_type as CareHistoryEntry['careType'],
+      description: rows[0].description,
+      performedBy: rows[0].performed_by,
+      performedByUserId: rows[0].performed_by_user_id,
+      photoUrl: rows[0].photo_url,
+      createdAt: rows[0].created_at
+    };
   },
 
   // Soft delete — sets deleted_at to NOW()
