@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { HandHeart, Loader2, Clock, CheckCircle2, XCircle } from 'lucide-react';
-import { createVolunteer, fetchMyVolunteerings } from '@/lib/api-client';
+import { HandHeart, Loader2, Clock, CheckCircle2, XCircle, Users, Search } from 'lucide-react';
+import { createVolunteer, fetchMyVolunteerings, fetchAllVolunteers } from '@/lib/api-client';
+import { useAppStore } from '@/lib/store';
 import { toast } from 'sonner';
 import type { Volunteer, VolunteerStatus } from '@/lib/types';
 
@@ -19,6 +20,9 @@ const statusConfig: Record<VolunteerStatus, { color: string; bgColor: string; ic
 };
 
 export default function VolunteersPage() {
+  const { user } = useAppStore();
+  const isVolunteerPlus = user && (user.role === 'volunteer' || user.role === 'manager' || user.role === 'admin');
+
   const [studentName, setStudentName] = useState('');
   const [studentId, setStudentId] = useState('');
   const [age, setAge] = useState('');
@@ -28,12 +32,27 @@ export default function VolunteersPage() {
   const [applications, setApplications] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Volunteer directory state
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [volDirLoading, setVolDirLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
     fetchMyVolunteerings()
       .then(setApplications)
       .catch(() => setApplications([]))
       .finally(() => setLoading(false));
   }, []);
+
+  // Fetch volunteer directory for volunteer+ users
+  useEffect(() => {
+    if (!isVolunteerPlus) return;
+    setVolDirLoading(true);
+    fetchAllVolunteers({ pageSize: 100, status: 'approved' })
+      .then((res) => setVolunteers(res.items))
+      .catch(() => setVolunteers([]))
+      .finally(() => setVolDirLoading(false));
+  }, [isVolunteerPlus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,10 +95,9 @@ export default function VolunteersPage() {
       toast.success('Volunteer application submitted!');
     } catch (err) {
       if (err instanceof Error) {
-        // Show more specific error messages from the API
         const msg = err.message;
-        if (msg === 'SESSION_EXPIRED') return; // already handled by apiFetch
-        if (msg === 'CSRF_TOKEN_EXPIRED') return; // already handled by apiFetch
+        if (msg === 'SESSION_EXPIRED') return;
+        if (msg === 'CSRF_TOKEN_EXPIRED') return;
         toast.error(msg);
       } else {
         toast.error('Failed to submit application');
@@ -88,6 +106,12 @@ export default function VolunteersPage() {
       setSubmitting(false);
     }
   };
+
+  const filteredVolunteers = volunteers.filter((v) =>
+    v.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    v.faculty.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    v.interests.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -174,6 +198,73 @@ export default function VolunteersPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Volunteer Directory — visible to volunteer+ roles */}
+      {isVolunteerPlus && (
+        <Card className="rounded-xl border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Users className="h-5 w-5 text-violet-500" />
+              Volunteer Directory
+            </CardTitle>
+            <CardDescription>Approved volunteers in the CatCare UTM community</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search volunteers by name, faculty, or interests..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {volDirLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredVolunteers.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  {searchQuery ? 'No volunteers match your search.' : 'No approved volunteers yet.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredVolunteers.map((vol) => (
+                  <div key={vol.id} className="p-3 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 rounded-full bg-violet-100 dark:bg-violet-950/40 flex items-center justify-center text-violet-600 dark:text-violet-400 font-semibold text-sm flex-shrink-0">
+                        {vol.studentName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{vol.studentName}</p>
+                        <p className="text-[11px] text-muted-foreground">{vol.faculty}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{vol.interests}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+                        <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />
+                        Approved
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground">ID: {vol.studentId}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {filteredVolunteers.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-3 text-center">
+                Showing {filteredVolunteers.length} approved volunteer{filteredVolunteers.length !== 1 ? 's' : ''}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

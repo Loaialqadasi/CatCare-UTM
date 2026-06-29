@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { validate } from './validate.middleware.js';
 import { authMiddleware } from '../Layth_Amgad-CCU-S1-01-Auth/auth.middleware.js';
-import { managerMiddleware, adminMiddleware } from '../Layth_Amgad-CCU-S1-28-Donations/admin.middleware.js';
+import { volunteerMiddleware, managerMiddleware } from '../Layth_Amgad-CCU-S1-28-Donations/admin.middleware.js';
 import { volunteersController } from './volunteers.controller.js';
 import { z } from 'zod';
 
@@ -34,17 +34,16 @@ volunteersRoutes.get(
   volunteersController.getMyVolunteerings
 );
 
-// List all volunteer applications — manager or above
-// FIX: Changed from adminMiddleware to managerMiddleware so managers can view volunteers
+// List all volunteer applications — volunteer or above (read-only directory)
+// FIX: Changed to volunteerMiddleware so volunteers can view the volunteer directory
 volunteersRoutes.get(
   '/',
   authMiddleware,
-  managerMiddleware,
+  volunteerMiddleware,
   volunteersController.list
 );
 
-// Update volunteer application status — manager or above
-// FIX: Changed from adminMiddleware to managerMiddleware so managers can approve/reject volunteers
+// Update volunteer application status — manager or above (approve/reject)
 volunteersRoutes.patch(
   '/:id/status',
   authMiddleware,
