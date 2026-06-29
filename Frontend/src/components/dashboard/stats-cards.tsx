@@ -100,7 +100,8 @@ export function StatsCards() {
       const emergenciesRes = results[1].status === 'fulfilled' ? results[1].value : null;
       const priorityFeed = results[2].status === 'fulfilled' ? results[2].value : null;
       const donationSummary = isAdmin && results[3]?.status === 'fulfilled' ? results[3].value : null;
-      const myVolApps = isVolunteerPlus && results[isAdmin ? 4 : 3]?.status === 'fulfilled' ? results[isAdmin ? 4 : 3].value : [];
+      const volResult = results[isAdmin ? 4 : 3];
+const myVolApps = isVolunteerPlus && volResult?.status === 'fulfilled' ? volResult.value : [];
 
       results.forEach((r, i) => {
         if (r.status === 'rejected') {
