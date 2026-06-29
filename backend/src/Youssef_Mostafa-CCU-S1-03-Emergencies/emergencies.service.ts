@@ -91,6 +91,15 @@ export const emergenciesService = {
       throw new ValidationError('Invalid status transition', { from: report.status, to: status });
     }
 
+    // FIX: Require proof before allowing resolution
+    // Managers/admins must see the fix proof before they can mark an emergency as resolved
+    if (status === 'resolved' && !report.proofNotes) {
+      throw new ValidationError(
+        'Cannot resolve emergency without proof. A volunteer must submit fix proof before this emergency can be marked as resolved.',
+        { status: report.status, proofSubmitted: false }
+      );
+    }
+
     const updated = await emergenciesRepository.updateStatus(id, status);
     if (!updated) {
       throw new NotFoundError('Emergency report not found');

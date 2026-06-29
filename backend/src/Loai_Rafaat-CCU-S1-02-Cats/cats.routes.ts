@@ -2,11 +2,12 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import rateLimit from 'express-rate-limit';
 import { validate } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/validate.middleware.js';
 import { authMiddleware } from '../Layth_Amgad-CCU-S1-01-Auth/auth.middleware.js';
-import { managerMiddleware, adminMiddleware } from '../Layth_Amgad-CCU-S1-28-Donations/admin.middleware.js';
+import { volunteerMiddleware, managerMiddleware, adminMiddleware } from '../Layth_Amgad-CCU-S1-28-Donations/admin.middleware.js';
 import { ValidationError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
 import { upload } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/upload.js';
 import { catsController } from './cats.controller.js';
-import { catIdParamSchema, createCatSchema, updateCatSchema, listCatsQuerySchema } from './cats.schemas.js';
+import { catIdParamSchema, createCatSchema, updateCatSchema, listCatsQuerySchema, healthStatusEnum } from './cats.schemas.js';
+import { z } from 'zod';
 
 export const catsRoutes = Router();
 
@@ -52,12 +53,16 @@ const uploadLimiter = rateLimit({
   },
 });
 
+// Schema for volunteer health status update — only allows changing healthStatus
+const updateHealthStatusSchema = z.object({
+  healthStatus: healthStatusEnum,
+});
+
 // ── Routes ─────────────────────────────────────────────────────────────
 // NOTE: CSRF protection is applied globally in app.ts via:
-//   app.use('/api/cats', csrfProtection);
-// Do NOT add per-route csrfProtection here — it would run AFTER authMiddleware,
-// causing a session identifier mismatch (token generated with session-cookie ID
-// but validated with user-ID), resulting in 403 CSRF_INVALID errors.
+//   app.use('/api/cats', optionalAuthMiddleware, csrfProtection);
+// This ensures req.user is set before CSRF validation, matching the session
+// identifier used during token generation.
 
 // create a cat — auth required, photo optional
 catsRoutes.post(
@@ -89,6 +94,16 @@ catsRoutes.get(
   '/:id/care-history',
   validate({ params: catIdParamSchema }),
   catsController.getCareHistory
+);
+
+// FIX: Volunteer health status update — volunteers can update cat health status only
+// This is a separate, more restricted endpoint than the full manager update
+catsRoutes.patch(
+  '/:id/health',
+  authMiddleware,
+  volunteerMiddleware,
+  validate({ params: catIdParamSchema, body: updateHealthStatusSchema }),
+  catsController.updateHealthStatus
 );
 
 // update a cat — manager or above, with optional photo upload

@@ -143,6 +143,14 @@ export function EmergencyDetail({ emergencyId }: EmergencyDetailProps) {
     if (!emergency) return;
     if (emergency.status === newStatus) return;
 
+    // FIX: Warn admin if trying to resolve without proof
+    if (newStatus === 'resolved' && !emergency.proofNotes) {
+      toast.error('Cannot resolve without proof', {
+        description: 'A volunteer must submit fix proof before this emergency can be resolved.',
+      });
+      return;
+    }
+
     setUpdating(true);
     try {
       const updated = await updateEmergencyStatus(emergency.id, newStatus);
@@ -381,12 +389,30 @@ export function EmergencyDetail({ emergencyId }: EmergencyDetailProps) {
       )}
 
       {/* Status Actions — manager+ can update; only admin can resolve/cancel */}
+      {/* FIX: Show proof info inside the status action card so admin sees it before resolving */}
       {isActive && canUpdateStatus && (
         <Card className="rounded-xl border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Update Status</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            {/* FIX: Show proof status info before the action buttons */}
+            {!emergency.proofNotes && canResolve && (
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                <p className="text-xs text-red-700 dark:text-red-300">
+                  No fix proof has been submitted yet. You cannot resolve this emergency until a volunteer submits proof of the fix.
+                </p>
+              </div>
+            )}
+            {emergency.proofNotes && canResolve && (
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                  Fix proof has been submitted. You can now review the proof above and resolve this emergency.
+                </p>
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
               {emergency.status === 'open' && (
                 <Button
@@ -406,8 +432,9 @@ export function EmergencyDetail({ emergencyId }: EmergencyDetailProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => handleStatusUpdate('resolved')}
-                    disabled={updating}
-                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                    disabled={updating || !emergency.proofNotes}
+                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!emergency.proofNotes ? 'Cannot resolve without proof' : 'Mark as resolved'}
                   >
                     <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
                     Mark Resolved

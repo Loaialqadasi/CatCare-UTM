@@ -106,5 +106,18 @@ export const catsController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  // FIX: New endpoint for volunteers to update only the cat's health status
+  // Volunteers cannot change other fields — this is a restricted version of the full update
+  async updateHealthStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const id = Number(req.params.id);
+      const { healthStatus } = req.body as { healthStatus: string };
+      const cat = await catsService.updateCat(id, { healthStatus } as UpdateCatInput);
+      success(res, cat);
+    } catch (error) {
+      next(error);
+    }
   }
 };

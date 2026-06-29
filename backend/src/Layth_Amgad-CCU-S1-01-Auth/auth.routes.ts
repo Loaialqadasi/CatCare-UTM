@@ -34,10 +34,12 @@ const refreshLimiter = rateLimit({
 authRoutes.post('/refresh', refreshLimiter, authController.refreshToken);
 
 // Change password (authenticated user)
-authRoutes.patch('/change-password', csrfProtection, authMiddleware, validate({ body: changePasswordSchema }), authController.changePassword);
+// FIX: authMiddleware MUST run before csrfProtection so req.user is set during CSRF validation
+authRoutes.patch('/change-password', authMiddleware, csrfProtection, validate({ body: changePasswordSchema }), authController.changePassword);
 
 // Admin reset password for a user
-authRoutes.patch('/users/:id/password', csrfProtection, authMiddleware, adminOnlyMiddleware, validate({ body: adminResetPasswordSchema }), authController.adminResetPassword);
+// FIX: authMiddleware MUST run before csrfProtection so req.user is set during CSRF validation
+authRoutes.patch('/users/:id/password', authMiddleware, csrfProtection, adminOnlyMiddleware, validate({ body: adminResetPasswordSchema }), authController.adminResetPassword);
 
 // Email verification endpoint — verifies the token sent to the user's email
 const verifyEmailSchema = z.object({
@@ -67,23 +69,28 @@ const adminCreateUserSchema = z.object({
   password: passwordSchema,
   role: z.enum(['student', 'volunteer', 'manager', 'admin']).default('student'),
 });
-authRoutes.post('/users', csrfProtection, authMiddleware, adminOnlyMiddleware, validate({ body: adminCreateUserSchema }), authController.adminCreateUser);
+// FIX: authMiddleware MUST run before csrfProtection so req.user is set during CSRF validation
+authRoutes.post('/users', authMiddleware, csrfProtection, adminOnlyMiddleware, validate({ body: adminCreateUserSchema }), authController.adminCreateUser);
 
 // Update user details (name, email)
 const updateUserSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100).optional(),
   email: z.string().email('Must be a valid email').optional(),
 });
-authRoutes.patch('/users/:id', csrfProtection, authMiddleware, adminOnlyMiddleware, validate({ body: updateUserSchema }), authController.updateUser);
+// FIX: authMiddleware MUST run before csrfProtection so req.user is set during CSRF validation
+authRoutes.patch('/users/:id', authMiddleware, csrfProtection, adminOnlyMiddleware, validate({ body: updateUserSchema }), authController.updateUser);
 
 // Update user role
 const updateUserRoleSchema = z.object({
   role: z.enum(['student', 'volunteer', 'manager', 'admin']),
 });
-authRoutes.patch('/users/:id/role', csrfProtection, authMiddleware, adminOnlyMiddleware, validate({ body: updateUserRoleSchema }), authController.updateUserRole);
+// FIX: authMiddleware MUST run before csrfProtection so req.user is set during CSRF validation
+// This was the root cause of the CSRF token error on role change
+authRoutes.patch('/users/:id/role', authMiddleware, csrfProtection, adminOnlyMiddleware, validate({ body: updateUserRoleSchema }), authController.updateUserRole);
 
 // Delete a user
 const userIdParamSchema = z.object({
   id: z.coerce.number().int().positive('Invalid user ID'),
 });
-authRoutes.delete('/users/:id', csrfProtection, authMiddleware, adminOnlyMiddleware, validate({ params: userIdParamSchema }), authController.deleteUser);
+// FIX: authMiddleware MUST run before csrfProtection so req.user is set during CSRF validation
+authRoutes.delete('/users/:id', authMiddleware, csrfProtection, adminOnlyMiddleware, validate({ params: userIdParamSchema }), authController.deleteUser);

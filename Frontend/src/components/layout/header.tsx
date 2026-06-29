@@ -108,10 +108,14 @@ export function Header({ onMenuClick }: HeaderProps) {
                 <p className="text-sm font-medium text-foreground leading-tight">
                   {user.fullName}
                 </p>
+                {/* FIX: Show Shield icon inline with the role badge for managers/admins */}
                 <Badge
                   variant="secondary"
                   className={cn('text-[10px] px-1.5 py-0 h-4 font-medium', roleColors[user.role])}
                 >
+                  {(user.role === 'manager' || user.role === 'admin') && (
+                    <Shield className="h-2.5 w-2.5 mr-0.5" />
+                  )}
                   {roleLabels[user.role]}
                 </Badge>
               </div>

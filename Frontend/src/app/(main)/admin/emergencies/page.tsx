@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AlertTriangle, Loader2, MapPin, Clock, Cat } from 'lucide-react';
+import { AlertTriangle, Loader2, MapPin, Clock, Cat, CheckCircle2, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchEmergencies, updateEmergencyStatus } from '@/lib/api-client';
 import { toast } from 'sonner';
@@ -137,6 +137,13 @@ export default function AdminEmergenciesPage() {
                         <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0 h-5', status.bgColor, status.color)}>
                           {status.label}
                         </Badge>
+                        {/* FIX: Show proof indicator badge */}
+                        {emergency.proofNotes && isActive && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300">
+                            <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />
+                            Proof Submitted
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm font-semibold text-foreground">{emergency.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{emergency.description}</p>
@@ -147,6 +154,18 @@ export default function AdminEmergenciesPage() {
                         <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{emergency.locationName}</span>
                         <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{new Date(emergency.createdAt).toLocaleDateString()}</span>
                       </div>
+                      {/* FIX: Show proof details inline for admin review */}
+                      {emergency.proofNotes && isActive && (
+                        <div className="mt-2 p-2 rounded-md bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-0.5">Fix Proof:</p>
+                          <p className="text-xs text-foreground line-clamp-2">{emergency.proofNotes}</p>
+                          {emergency.proofImageUrl && (
+                            <a href={emergency.proofImageUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 hover:underline flex items-center gap-0.5 mt-0.5">
+                              <Upload className="h-2.5 w-2.5" /> View image
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {isActive && (
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -156,7 +175,16 @@ export default function AdminEmergenciesPage() {
                           </Button>
                         )}
                         {canResolve && (
-                          <Button size="sm" onClick={() => handleStatusUpdate(emergency.id, 'resolved')} disabled={updating === emergency.id} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                          <Button
+                            size="sm"
+                            onClick={() => handleStatusUpdate(emergency.id, 'resolved')}
+                            disabled={updating === emergency.id || !emergency.proofNotes}
+                            title={!emergency.proofNotes ? 'Cannot resolve without proof' : 'Resolve'}
+                            className={cn(
+                              "bg-emerald-500 hover:bg-emerald-600 text-white",
+                              !emergency.proofNotes && "opacity-50 cursor-not-allowed"
+                            )}
+                          >
                             Resolve
                           </Button>
                         )}
