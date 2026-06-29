@@ -496,6 +496,20 @@ export async function updateCat(
   return normalizeCat(json.data);
 }
 
+export async function updateCatHealthStatus(
+  id: string,
+  healthStatus: string,
+): Promise<Cat> {
+  const res = await apiFetch(`${API_BASE}/cats/${id}/health`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ healthStatus }),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error?.message || 'Failed to update cat health status');
+  return normalizeCat(json.data);
+}
+
 export async function deleteCat(id: string): Promise<void> {
   const res = await apiFetch(`${API_BASE}/cats/${id}`, {
     method: 'DELETE',
