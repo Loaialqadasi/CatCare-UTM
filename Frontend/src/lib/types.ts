@@ -161,6 +161,7 @@ export interface CareHistoryEntry {
   description: string;
   performedBy: string;
   performedByUserId: string | null;
+  photoUrl: string | null;
   createdAt: string;
 }
 
@@ -199,6 +200,17 @@ export interface CreateEmergencyFormData {
   locationName: string;
   latitude?: number;
   longitude?: number;
+}
+
+export interface CreateCareHistoryFormData {
+  careType: CareType;
+  description: string;
+  photo?: File;
+}
+
+export interface SubmitProofFormData {
+  proofNotes: string;
+  proofImage?: File;
 }
 
 // --- filters ---
