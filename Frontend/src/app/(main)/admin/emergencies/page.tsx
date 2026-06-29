@@ -42,8 +42,10 @@ export default function AdminEmergenciesPage() {
   const [statusFilter, setStatusFilter] = useState<EmergencyStatus | ''>('');
   const [updating, setUpdating] = useState<string | null>(null);
 
+  const ROLE_RANK: Record<string, number> = { student: 0, volunteer: 1, manager: 2, admin: 3 };
+
   useEffect(() => {
-    if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
+    if (!user || (ROLE_RANK[user.role] ?? 0) < ROLE_RANK['manager']) {
       router.push('/dashboard');
     }
   }, [user, router]);
@@ -64,7 +66,7 @@ export default function AdminEmergenciesPage() {
   }, [statusFilter]);
 
   useEffect(() => {
-    if (user?.role === 'admin' || user?.role === 'manager') {
+    if ((ROLE_RANK[user?.role ?? 'student'] ?? 0) >= ROLE_RANK['manager']) {
       loadData();
     }
   }, [loadData, user]);
@@ -82,7 +84,7 @@ export default function AdminEmergenciesPage() {
     }
   };
 
-  if (!user || (user.role !== 'admin' && user.role !== 'manager')) return null;
+  if (!user || (ROLE_RANK[user.role] ?? 0) < ROLE_RANK['manager']) return null;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -121,6 +123,7 @@ export default function AdminEmergenciesPage() {
             const priority = priorityConfig[emergency.priority] ?? priorityConfig.medium;
             const status = statusConfig[emergency.status] ?? statusConfig.open;
             const isActive = emergency.status === 'open' || emergency.status === 'in_progress';
+            const canResolve = user?.role === 'admin';
 
             return (
               <Card key={emergency.id} className="rounded-xl border-border/50 hover:shadow-sm transition-shadow">
@@ -152,12 +155,16 @@ export default function AdminEmergenciesPage() {
                             {updating === emergency.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Start'}
                           </Button>
                         )}
-                        <Button size="sm" onClick={() => handleStatusUpdate(emergency.id, 'resolved')} disabled={updating === emergency.id} className="bg-emerald-500 hover:bg-emerald-600 text-white">
-                          Resolve
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(emergency.id, 'cancelled')} disabled={updating === emergency.id} className="text-red-600 border-red-200 hover:bg-red-50">
-                          Cancel
-                        </Button>
+                        {canResolve && (
+                          <Button size="sm" onClick={() => handleStatusUpdate(emergency.id, 'resolved')} disabled={updating === emergency.id} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                            Resolve
+                          </Button>
+                        )}
+                        {canResolve && (
+                          <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(emergency.id, 'cancelled')} disabled={updating === emergency.id} className="text-red-600 border-red-200 hover:bg-red-50">
+                            Cancel
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>

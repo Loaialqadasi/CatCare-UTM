@@ -3,10 +3,8 @@ import { AuthenticationError, ConflictError } from '../Mohamed_Abdelgawwad-CCU-S
 import { success } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/response.js';
 import { authService } from './auth.service.js';
 import { authRepository } from './auth.repository.js';
-import { activityService } from './activity.service.js';
 import { LoginInput, RegisterInput } from './auth.types.js';
 import { env } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/env.js';
-import { audit } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/audit.js';
 
 // CRIT-1 Fix: Cookie options for HttpOnly JWT
 // IMPORTANT: sameSite must be 'none' in production because the frontend (Vercel)
@@ -56,12 +54,6 @@ export const authController = {
       // Set HttpOnly cookies for both access and refresh tokens
       res.cookie('token', result.token, ACCESS_COOKIE_OPTIONS);
       res.cookie('refreshToken', result.refreshToken, REFRESH_COOKIE_OPTIONS);
-      // Audit login (non-blocking)
-      void audit(req, {
-        action: 'auth.login',
-        target_type: 'user',
-        target_id: result.user.id,
-      });
       success(res, { user: result.user });
     } catch (error) {
       next(error);
@@ -180,11 +172,6 @@ export const authController = {
       const id = Number(req.params.id);
       const { password } = req.body as { password: string };
       const result = await authService.adminResetPassword(id, password);
-      void audit(req, {
-        action: 'user.password.reset',
-        target_type: 'user',
-        target_id: id,
-      });
       success(res, result);
     } catch (error) {
       next(error);
@@ -213,12 +200,6 @@ export const authController = {
         role: string;
       };
       const user = await authService.adminCreateUser({ fullName, email, password, role });
-      void audit(req, {
-        action: 'user.create',
-        target_type: 'user',
-        target_id: user.id,
-        metadata: { role },
-      });
       success(res, user, 201);
     } catch (error) {
       next(error);
@@ -230,12 +211,6 @@ export const authController = {
       const id = Number(req.params.id);
       const { fullName, email } = req.body as { fullName?: string; email?: string };
       const user = await authService.updateUser(id, { fullName, email });
-      void audit(req, {
-        action: 'user.update',
-        target_type: 'user',
-        target_id: id,
-        metadata: { fullName, email },
-      });
       success(res, user);
     } catch (error) {
       next(error);
@@ -251,14 +226,7 @@ export const authController = {
         return next(new AuthenticationError('You cannot change your own role'));
       }
       // C-6 FIX: authService.updateUserRole now also checks admin@utm.my protection
-      const previousUser = await authRepository.findById(id);
       const user = await authService.updateUserRole(id, role);
-      void audit(req, {
-        action: 'user.role.update',
-        target_type: 'user',
-        target_id: id,
-        metadata: { oldRole: previousUser?.role, newRole: role },
-      });
       success(res, user);
     } catch (error) {
       next(error);
@@ -272,31 +240,8 @@ export const authController = {
       if (req.user && req.user.id === id) {
         return next(new AuthenticationError('You cannot delete your own account'));
       }
-      const target = await authRepository.findById(id);
       await authService.deleteUser(id);
-      void audit(req, {
-        action: 'user.delete',
-        target_type: 'user',
-        target_id: id,
-        metadata: { deletedEmail: target?.email },
-      });
       success(res, { message: 'User deleted successfully' });
-    } catch (error) {
-      next(error);
-    }
-  },
-
-  // ─── User Activity / History ───
-  // Returns a unified timeline of everything the authenticated user has done
-  // across cats, care history, emergencies, donations, and volunteer applications.
-  // Used by the profile page to show "Activity" and "History" tabs.
-  async getActivity(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      if (!req.user) {
-        return next(new AuthenticationError('Missing or invalid token'));
-      }
-      const activity = await activityService.getUserActivity(req.user.id);
-      success(res, activity);
     } catch (error) {
       next(error);
     }

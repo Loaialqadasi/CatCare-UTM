@@ -18,11 +18,14 @@ import {
   Flame,
   AlertCircle,
   Info,
+  Upload,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   fetchEmergencyById,
   updateEmergencyStatus,
+  submitEmergencyProof,
 } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
@@ -107,11 +110,16 @@ export function EmergencyDetail({ emergencyId }: EmergencyDetailProps) {
   const [emergency, setEmergency] = useState<EmergencyReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [proofNotes, setProofNotes] = useState('');
+  const [submittingProof, setSubmittingProof] = useState(false);
   const router = useRouter();
   const { user } = useAppStore();
 
-  // H-12 FIX: Only admin users can change emergency status
-  const canUpdateStatus = user?.role === 'admin';
+  // H-12 FIX: Role-based status update — manager+ can update, only admin can resolve/cancel
+  const ROLE_RANK: Record<string, number> = { student: 0, volunteer: 1, manager: 2, admin: 3 };
+  const userRank = ROLE_RANK[user?.role ?? 'student'] ?? 0;
+  const canUpdateStatus = userRank >= ROLE_RANK['manager']; // manager+ can update status
+  const canResolve = user?.role === 'admin'; // only admin can resolve/cancel
 
   useEffect(() => {
     if (!emergencyId) return;
@@ -148,6 +156,21 @@ export function EmergencyDetail({ emergencyId }: EmergencyDetailProps) {
       });
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleSubmitProof = async () => {
+    if (!emergency || !proofNotes.trim()) return;
+    setSubmittingProof(true);
+    try {
+      const updated = await submitEmergencyProof(emergency.id, proofNotes.trim());
+      setEmergency(updated);
+      setProofNotes('');
+      toast.success('Proof submitted', { description: 'Your fix proof has been recorded' });
+    } catch (err) {
+      toast.error('Failed to submit proof', { description: err instanceof Error ? err.message : 'Please try again' });
+    } finally {
+      setSubmittingProof(false);
     }
   };
 
@@ -298,7 +321,66 @@ export function EmergencyDetail({ emergencyId }: EmergencyDetailProps) {
         </CardContent>
       </Card>
 
-      {/* Status Actions — H-12 FIX: Only admin can update status */}
+      {/* Proof Section — volunteers+ can submit, everyone can view */}
+      {(emergency.status === 'open' || emergency.status === 'in_progress') && (
+        <>
+          {/* Show existing proof if submitted */}
+          {emergency.proofNotes && (
+            <Card className="rounded-xl border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span className="text-sm font-medium">Fix Proof Submitted</span>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{emergency.proofNotes}</p>
+                {emergency.proofImageUrl && (
+                  <a href={emergency.proofImageUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                    <Upload className="h-3 w-3" /> View attached proof image
+                  </a>
+                )}
+                {emergency.proofSubmittedAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Submitted {new Date(emergency.proofSubmittedAt).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Submit proof form — volunteer+ */}
+          {userRank >= 1 && !emergency.proofNotes && (
+            <Card className="rounded-xl border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Submit Fix Proof
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">If you have fixed or addressed this emergency, describe what you did below. This will be visible to managers and admins before they resolve the report.</p>
+                <textarea
+                  value={proofNotes}
+                  onChange={(e) => setProofNotes(e.target.value)}
+                  placeholder="Describe what actions were taken to fix this emergency..."
+                  className="w-full min-h-[80px] rounded-lg border border-border bg-background px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  minLength={5}
+                />
+                <Button
+                  size="sm"
+                  onClick={handleSubmitProof}
+                  disabled={submittingProof || proofNotes.trim().length < 5}
+                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                >
+                  {submittingProof ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Upload className="mr-1.5 h-3.5 w-3.5" />}
+                  Submit Proof
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* Status Actions — manager+ can update; only admin can resolve/cancel */}
       {isActive && canUpdateStatus && (
         <Card className="rounded-xl border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
           <CardHeader className="pb-3">
@@ -318,46 +400,63 @@ export function EmergencyDetail({ emergencyId }: EmergencyDetailProps) {
                   Mark In Progress
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleStatusUpdate('resolved')}
-                disabled={updating}
-                className="border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-              >
-                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                Mark Resolved
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleStatusUpdate('cancelled')}
-                disabled={updating}
-                className="border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-950/40"
-              >
-                Cancel Report
-              </Button>
+              {canResolve && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleStatusUpdate('resolved')}
+                    disabled={updating}
+                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                  >
+                    <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                    Mark Resolved
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleStatusUpdate('cancelled')}
+                    disabled={updating}
+                    className="border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-950/40"
+                  >
+                    Cancel Report
+                  </Button>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Resolved Info */}
-      {(emergency.status === 'resolved' || emergency.status === 'cancelled') && emergency.resolvedAt && (
+      {(emergency.status === 'resolved' || emergency.status === 'cancelled') && (
         <Card className="rounded-xl border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
-          <CardContent className="p-4 flex items-center gap-3">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
-                {emergency.status === 'resolved' ? 'Resolved' : 'Cancelled'}
-              </p>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                {new Date(emergency.resolvedAt).toLocaleString('en-US', {
-                  month: 'long', day: 'numeric', year: 'numeric',
-                  hour: 'numeric', minute: '2-digit',
-                })}
-              </p>
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                  {emergency.status === 'resolved' ? 'Resolved' : 'Cancelled'}
+                </p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                  {emergency.resolvedAt ? new Date(emergency.resolvedAt).toLocaleString('en-US', {
+                    month: 'long', day: 'numeric', year: 'numeric',
+                    hour: 'numeric', minute: '2-digit',
+                  }) : ''}
+                </p>
+              </div>
             </div>
+            {emergency.proofNotes && (
+              <div className="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-700">
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300 mb-1">Fix Proof:</p>
+                <p className="text-xs text-foreground whitespace-pre-wrap">{emergency.proofNotes}</p>
+                {emergency.proofImageUrl && (
+                  <a href={emergency.proofImageUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1">
+                    <Upload className="h-3 w-3" /> View proof image
+                  </a>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

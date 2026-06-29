@@ -308,10 +308,6 @@ export const authService = {
     if (!user) {
       throw new AuthenticationError('User not found');
     }
-    // C-6 FIX (extended): protect the primary admin account from being deleted
-    if (user.email === 'admin@utm.my') {
-      throw new AuthenticationError('Cannot delete the primary admin account (admin@utm.my)');
-    }
     await authRepository.deleteById(userId);
   },
 

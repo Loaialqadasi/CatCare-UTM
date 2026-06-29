@@ -111,5 +111,20 @@ export const emergenciesService = {
       throw new NotFoundError('Emergency report not found or not deleted');
     }
     return report;
+  },
+
+  async submitProof(id: number, proofNotes: string, proofImageUrl: string | null, submittedByUserId: number): Promise<EmergencyReportWithCat> {
+    const report = await emergenciesRepository.findById(id);
+    if (!report) {
+      throw new NotFoundError('Emergency report not found');
+    }
+    if (report.status !== 'in_progress' && report.status !== 'open') {
+      throw new ValidationError('Can only submit proof for open or in-progress emergencies', { status: report.status });
+    }
+    const updated = await emergenciesRepository.submitProof(id, proofNotes, proofImageUrl, submittedByUserId);
+    if (!updated) {
+      throw new NotFoundError('Emergency report not found');
+    }
+    return updated;
   }
 };

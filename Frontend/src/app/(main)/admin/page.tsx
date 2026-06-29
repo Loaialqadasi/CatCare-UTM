@@ -36,8 +36,10 @@ export default function AdminPage() {
   });
   const [loading, setLoading] = useState(true);
 
+  const ROLE_RANK: Record<string, number> = { student: 0, volunteer: 1, manager: 2, admin: 3 };
+
   useEffect(() => {
-    if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
+    if (!user || (ROLE_RANK[user.role] ?? 0) < ROLE_RANK['manager']) {
       router.push('/dashboard');
       return;
     }
@@ -73,7 +75,7 @@ export default function AdminPage() {
     loadStats();
   }, [user, router]);
 
-  if (!user || (user.role !== 'admin' && user.role !== 'manager')) return null;
+  if (!user || (ROLE_RANK[user.role] ?? 0) < ROLE_RANK['manager']) return null;
 
   const quickLinks = [
     {
@@ -118,11 +120,17 @@ export default function AdminPage() {
     },
   ];
 
+  // Filter links based on role — admin-only links hidden for managers
+  const visibleLinks = quickLinks.filter(link => {
+    if ((link.route === '/admin/users' || link.route === '/admin/donations') && user.role !== 'admin') return false;
+    return true;
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Quick Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {quickLinks.map((link) => (
+        {visibleLinks.map((link) => (
           <Card
             key={link.route}
             className="rounded-xl border-border/50 hover:shadow-md transition-all cursor-pointer group"

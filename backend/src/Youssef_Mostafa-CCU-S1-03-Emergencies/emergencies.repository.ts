@@ -26,6 +26,10 @@ interface EmergencyRow {
   resolved_at: string | null;
   cat_nickname?: string | null;
   deleted_at: string | null;
+  proof_notes: string | null;
+  proof_image_url: string | null;
+  proof_submitted_by_user_id: number | null;
+  proof_submitted_at: string | null;
 }
 
 const mapEmergency = (row: EmergencyRow): EmergencyReport => ({
@@ -42,7 +46,11 @@ const mapEmergency = (row: EmergencyRow): EmergencyReport => ({
   reportedByUserId: row.reported_by_user_id,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
-  resolvedAt: row.resolved_at
+  resolvedAt: row.resolved_at,
+  proofNotes: row.proof_notes,
+  proofImageUrl: row.proof_image_url,
+  proofSubmittedByUserId: row.proof_submitted_by_user_id,
+  proofSubmittedAt: row.proof_submitted_at
 });
 
 // when we join with cats, attach the cat nickname if it exists
@@ -53,7 +61,7 @@ const mapEmergencyWithCat = (row: EmergencyRow): EmergencyReportWithCat => ({
 
 // base query with LEFT JOIN so we always get the cat name if there is one
 const baseSelect =
-  'SELECT er.id, er.cat_id, er.title, er.description, er.emergency_type, er.priority, er.status, er.location_name, er.latitude, er.longitude, er.reported_by_user_id, er.created_at, er.updated_at, er.resolved_at, er.deleted_at, c.nickname as cat_nickname FROM emergency_reports er LEFT JOIN cats c ON er.cat_id = c.id';
+  'SELECT er.id, er.cat_id, er.title, er.description, er.emergency_type, er.priority, er.status, er.location_name, er.latitude, er.longitude, er.reported_by_user_id, er.created_at, er.updated_at, er.resolved_at, er.deleted_at, er.proof_notes, er.proof_image_url, er.proof_submitted_by_user_id, er.proof_submitted_at, c.nickname as cat_nickname FROM emergency_reports er LEFT JOIN cats c ON er.cat_id = c.id';
 
 export const emergenciesRepository = {
   async create(input: CreateEmergencyInput): Promise<EmergencyReportWithCat> {
@@ -207,6 +215,20 @@ export const emergenciesRepository = {
     await db.query(
       'UPDATE emergency_reports SET deleted_at = NULL, updated_at = NOW() WHERE id = $1',
       [id]
+    );
+    return this.findById(id);
+  },
+
+  async submitProof(id: number, proofNotes: string, proofImageUrl: string | null, submittedByUserId: number): Promise<EmergencyReportWithCat | null> {
+    await db.query(
+      `UPDATE emergency_reports
+       SET proof_notes = $1,
+           proof_image_url = $2,
+           proof_submitted_by_user_id = $3,
+           proof_submitted_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $4 AND deleted_at IS NULL`,
+      [proofNotes, proofImageUrl, submittedByUserId, id]
     );
     return this.findById(id);
   }

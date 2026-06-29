@@ -27,6 +27,13 @@ export const emergencyIdParamSchema = z.object({
   id: z.coerce.number().int().positive()
 });
 
+export const submitProofSchema = z.object({
+  proofNotes: z.string().min(5, 'Proof notes must be at least 5 characters').max(2000).trim(),
+  proofImageUrl: z.string().url().optional().nullable(),
+});
+
 export const updateEmergencyStatusSchema = z.object({
-  status: emergencyStatusEnum
+  status: emergencyStatusEnum,
+  proofNotes: z.string().min(5).max(2000).trim().optional(),
+  proofImageUrl: z.string().url().optional().nullable(),
 });

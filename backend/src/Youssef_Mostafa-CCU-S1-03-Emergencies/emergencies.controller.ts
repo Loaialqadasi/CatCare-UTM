@@ -85,5 +85,19 @@ export const emergenciesController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async submitProof(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        throw new AuthenticationError('Missing or invalid token');
+      }
+      const id = Number(req.params.id);
+      const { proofNotes, proofImageUrl } = req.body;
+      const report = await emergenciesService.submitProof(id, proofNotes, proofImageUrl ?? null, req.user.id);
+      success(res, report);
+    } catch (error) {
+      next(error);
+    }
   }
 };

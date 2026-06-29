@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import rateLimit from 'express-rate-limit';
 import { validate } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/validate.middleware.js';
 import { authMiddleware } from '../Layth_Amgad-CCU-S1-01-Auth/auth.middleware.js';
-import { managerMiddleware } from '../Layth_Amgad-CCU-S1-28-Donations/admin.middleware.js';
+import { managerMiddleware, adminMiddleware } from '../Layth_Amgad-CCU-S1-28-Donations/admin.middleware.js';
 import { ValidationError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
 import { upload } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/upload.js';
 import { catsController } from './cats.controller.js';
@@ -91,7 +91,7 @@ catsRoutes.get(
   catsController.getCareHistory
 );
 
-// update a cat — manager or admin, with optional photo upload
+// update a cat — manager or above, with optional photo upload
 catsRoutes.patch(
   '/:id',
   authMiddleware,
@@ -102,20 +102,20 @@ catsRoutes.patch(
   catsController.update
 );
 
-// soft delete a cat — manager or admin
+// soft delete a cat — admin only
 catsRoutes.delete(
   '/:id',
   authMiddleware,
-  managerMiddleware,
+  adminMiddleware,
   validate({ params: catIdParamSchema }),
   catsController.softDelete
 );
 
-// restore a soft-deleted cat — manager or admin
+// restore a soft-deleted cat — admin only
 catsRoutes.patch(
   '/:id/restore',
   authMiddleware,
-  managerMiddleware,
+  adminMiddleware,
   validate({ params: catIdParamSchema }),
   catsController.restore
 );

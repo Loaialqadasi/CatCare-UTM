@@ -22,12 +22,6 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     // React rules
     "react-hooks/exhaustive-deps": "warn",
     "react-hooks/purity": "off",
-    // The set-state-in-effect rule flags the very common "useEffect → fetch →
-    // setState" data-loading pattern as a cascading-render risk. This is a
-    // legitimate pattern for client-side data loading (the alternative is
-    // React Query / SWR, which is a larger refactor). Downgrade to a warning
-    // so it surfaces in CI output without blocking the build.
-    "react-hooks/set-state-in-effect": "warn",
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
     "react/prop-types": "off",

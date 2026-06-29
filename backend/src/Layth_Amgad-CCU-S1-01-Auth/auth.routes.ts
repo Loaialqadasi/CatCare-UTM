@@ -16,8 +16,6 @@ authRoutes.post('/register', authLimiter, validate({ body: registerSchema }), au
 authRoutes.post('/login', authLimiter, validate({ body: loginSchema }), authController.login);
 // needs a valid JWT to get the user profile
 authRoutes.get('/me', authMiddleware, authController.me);
-// User activity / history timeline — used by the profile page
-authRoutes.get('/me/activity', authMiddleware, authController.getActivity);
 // CRIT-1 Fix: Logout endpoint to clear HttpOnly cookie
 // SECURITY: Add auth middleware so logout validates the user session
 authRoutes.post('/logout', authMiddleware, authController.logout);
@@ -36,22 +34,10 @@ const refreshLimiter = rateLimit({
 authRoutes.post('/refresh', refreshLimiter, authController.refreshToken);
 
 // Change password (authenticated user)
-// NOTE: csrfProtection was removed here — the double-submit CSRF cookie uses
-// SameSite=None (required for the Vercel↔Render cross-origin setup), which is
-// increasingly blocked by modern browsers (Chrome 120+, Safari, Firefox) as a
-// third-party cookie. That caused every change-password attempt to fail with
-// 403 CSRF_INVALID because the cookie was never stored. This endpoint is
-// already protected by `authMiddleware` (requires a valid JWT cookie), so the
-// practical CSRF risk is low — an attacker who could trick the browser into
-// sending the user's HttpOnly JWT cookie would only be able to change the
-// victim's password (not exfiltrate it), and the victim would immediately
-// notice and use the forgot-password flow.
-authRoutes.patch('/change-password', authMiddleware, validate({ body: changePasswordSchema }), authController.changePassword);
+authRoutes.patch('/change-password', csrfProtection, authMiddleware, validate({ body: changePasswordSchema }), authController.changePassword);
 
 // Admin reset password for a user
-// NOTE: csrfProtection removed for the same reason as /change-password above.
-// This endpoint is still protected by authMiddleware + adminOnlyMiddleware.
-authRoutes.patch('/users/:id/password', authMiddleware, adminOnlyMiddleware, validate({ body: adminResetPasswordSchema }), authController.adminResetPassword);
+authRoutes.patch('/users/:id/password', csrfProtection, authMiddleware, adminOnlyMiddleware, validate({ body: adminResetPasswordSchema }), authController.adminResetPassword);
 
 // Email verification endpoint — verifies the token sent to the user's email
 const verifyEmailSchema = z.object({
@@ -75,36 +61,29 @@ authRoutes.get('/users', authMiddleware, adminOnlyMiddleware, authController.lis
 // H-5 FIX: Require proper password (8 chars + special char) for admin-created users
 // Uses shared passwordSchema and emailSchema from auth.schemas.ts to avoid
 // duplicating validation logic — a single source of truth for password rules.
-//
-// MIDDLEWARE ORDER FIX: authMiddleware MUST run BEFORE csrfProtection.
-// Otherwise req.user is undefined when csrfProtection calls getSessionIdentifier(),
-// which falls back to the anonymous session cookie — but the token was generated
-// bound to user-${id} (via /api/csrf-token's optionalAuthMiddleware). The mismatch
-// causes a 403 CSRF_INVALID on every state-changing admin request.
-// Same fix applied to /users/:id, /users/:id/role, /users/:id (DELETE).
 const adminCreateUserSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
   email: emailSchema,
   password: passwordSchema,
   role: z.enum(['student', 'volunteer', 'manager', 'admin']).default('student'),
 });
-authRoutes.post('/users', authMiddleware, adminOnlyMiddleware, csrfProtection, validate({ body: adminCreateUserSchema }), authController.adminCreateUser);
+authRoutes.post('/users', csrfProtection, authMiddleware, adminOnlyMiddleware, validate({ body: adminCreateUserSchema }), authController.adminCreateUser);
 
 // Update user details (name, email)
 const updateUserSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100).optional(),
   email: z.string().email('Must be a valid email').optional(),
 });
-authRoutes.patch('/users/:id', authMiddleware, adminOnlyMiddleware, csrfProtection, validate({ body: updateUserSchema }), authController.updateUser);
+authRoutes.patch('/users/:id', csrfProtection, authMiddleware, adminOnlyMiddleware, validate({ body: updateUserSchema }), authController.updateUser);
 
 // Update user role
 const updateUserRoleSchema = z.object({
   role: z.enum(['student', 'volunteer', 'manager', 'admin']),
 });
-authRoutes.patch('/users/:id/role', authMiddleware, adminOnlyMiddleware, csrfProtection, validate({ body: updateUserRoleSchema }), authController.updateUserRole);
+authRoutes.patch('/users/:id/role', csrfProtection, authMiddleware, adminOnlyMiddleware, validate({ body: updateUserRoleSchema }), authController.updateUserRole);
 
 // Delete a user
 const userIdParamSchema = z.object({
   id: z.coerce.number().int().positive('Invalid user ID'),
 });
-authRoutes.delete('/users/:id', authMiddleware, adminOnlyMiddleware, csrfProtection, validate({ params: userIdParamSchema }), authController.deleteUser);
+authRoutes.delete('/users/:id', csrfProtection, authMiddleware, adminOnlyMiddleware, validate({ params: userIdParamSchema }), authController.deleteUser);

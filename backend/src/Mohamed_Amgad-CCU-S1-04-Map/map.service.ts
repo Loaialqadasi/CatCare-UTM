@@ -28,12 +28,6 @@ export const mapService = {
   /**
    * Forward geocode: convert an address/place name to coordinates.
    * Biased towards UTM campus area (Johor Bahru, Malaysia).
-   *
-   * Strategy:
-   *   1. Always restrict to Malaysia (countrycodes=my).
-   *   2. Prefer results inside the UTM/Johor Bahru viewbox (bounded=1).
-   *   3. If no results in viewbox, retry with bounded=0 (Malaysia-wide).
-   *   4. Sort by distance to UTM center so campus-area results rank first.
    */
   async geocode(query: string): Promise<GeocodeResult[]> {
     if (!query || query.trim().length < 2) {
@@ -48,65 +42,48 @@ export const mapService = {
     }
 
     try {
-      // Pass 1: strictly bounded to UTM/Johor Bahru viewbox
-      const results = await this.queryNominatim(query, /* bounded */ true);
-      // Pass 2: Malaysia-wide if pass 1 returned nothing
-      const final = results.length > 0 ? results : await this.queryNominatim(query, false);
-
-      // Sort by distance to UTM center (1.5595, 103.6388)
-      const UTM_LAT = 1.5595;
-      const UTM_LNG = 103.6388;
-      const sorted = [...final].sort((a, b) => {
-        const da = Math.hypot(parseFloat(a.lat) - UTM_LAT, parseFloat(a.lon) - UTM_LNG);
-        const db = Math.hypot(parseFloat(b.lat) - UTM_LAT, parseFloat(b.lon) - UTM_LNG);
-        return da - db;
+      const params = new URLSearchParams({
+        q: query,
+        format: 'json',
+        limit: '5',
+        countrycodes: 'my',          // Malaysia only
+        viewbox: '103.55,1.45,103.72,1.62', // UTM/Johor Bahru bounding box
+        bounded: '0',                // Prefer results in viewbox but don't exclude others
+        addressdetails: '1',
       });
 
-      // Cache the results
-      geocodeCache.set(cacheKey, { data: sorted, expires: Date.now() + CACHE_TTL_MS });
+      const res = await fetch(`${NOMINATIM_BASE}/search?${params}`, {
+        headers: {
+          'User-Agent': 'CatCare-UTM/1.0 (campus cat management system)',
+          'Accept-Language': 'en',
+        },
+      });
 
-      return sorted;
+      if (!res.ok) {
+        logger.warn({ status: res.status }, 'Nominatim geocoding request failed');
+        return [];
+      }
+
+      const data = await res.json() as Array<{
+        lat: string;
+        lon: string;
+        display_name: string;
+      }>;
+
+      const results: GeocodeResult[] = data.map((item) => ({
+        lat: item.lat,
+        lon: item.lon,
+        displayName: item.display_name,
+      }));
+
+      // Cache the results
+      geocodeCache.set(cacheKey, { data: results, expires: Date.now() + CACHE_TTL_MS });
+
+      return results;
     } catch (error) {
       logger.error({ error }, 'Geocoding service error');
       return [];
     }
-  },
-
-  /** Internal helper — single Nominatim query. */
-  async queryNominatim(query: string, bounded: boolean): Promise<GeocodeResult[]> {
-    const params = new URLSearchParams({
-      q: query,
-      format: 'json',
-      limit: '8',
-      countrycodes: 'my',
-      viewbox: '103.55,1.45,103.72,1.62',
-      bounded: bounded ? '1' : '0',
-      addressdetails: '1',
-    });
-
-    const res = await fetch(`${NOMINATIM_BASE}/search?${params}`, {
-      headers: {
-        'User-Agent': 'CatCare-UTM/1.0 (campus cat management system)',
-        'Accept-Language': 'en',
-      },
-    });
-
-    if (!res.ok) {
-      logger.warn({ status: res.status }, 'Nominatim geocoding request failed');
-      return [];
-    }
-
-    const data = (await res.json()) as Array<{
-      lat: string;
-      lon: string;
-      display_name: string;
-    }>;
-
-    return data.map((item) => ({
-      lat: item.lat,
-      lon: item.lon,
-      displayName: item.display_name,
-    }));
   },
 
   /**

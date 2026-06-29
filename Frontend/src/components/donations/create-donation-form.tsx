@@ -119,7 +119,7 @@ export function CreateDonationForm() {
         <CardContent className="flex flex-col items-center gap-3">
           <div className="bg-white p-4 rounded-xl shadow-md">
             <Image
-              src="/payment-qr.png"
+              src="/Loai-qr.png"
               alt="Bank Payment QR Code"
               width={200}
               height={200}

@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthenticationError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
 import { success } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/response.js';
 import { uploadImage } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/upload.js';
-import { audit } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/audit.js';
 import { catsService } from './cats.service.js';
 import { CatListQuery, CreateCatInput, UpdateCatInput } from './cats.types.js';
 
@@ -25,12 +24,6 @@ export const catsController = {
         ...payload,
         photoUrl,
         createdByUserId: req.user.id,
-      });
-      void audit(req, {
-        action: 'cat.create',
-        target_type: 'cat',
-        target_id: cat.id,
-        metadata: { nickname: cat.nickname },
       });
       success(res, cat, 201);
     } catch (error) {
@@ -77,7 +70,6 @@ export const catsController = {
     try {
       const id = Number(req.params.id);
       await catsService.softDeleteCat(id);
-      void audit(req, { action: 'cat.delete', target_type: 'cat', target_id: id });
       success(res, { message: 'Cat soft deleted successfully' });
     } catch (error) {
       next(error);
@@ -88,7 +80,6 @@ export const catsController = {
     try {
       const id = Number(req.params.id);
       const cat = await catsService.restoreCat(id);
-      void audit(req, { action: 'cat.restore', target_type: 'cat', target_id: id });
       success(res, cat);
     } catch (error) {
       next(error);

@@ -7,7 +7,7 @@ import { getMe, startTokenRefreshTimer, stopTokenRefreshTimer } from '@/lib/api-
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, setUser } = useAppStore();
@@ -45,23 +45,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       return;
     }
 
-    // Validate session in background — don't block the UI or force logout on
-    // transient network failures. The 401 interceptor in api-client handles
-    // token refresh automatically.
-    //
-    // IMPORTANT: A network error (TypeError "Failed to fetch") does NOT mean
-    // the session is invalid — the backend might be temporarily unreachable.
-    // Only treat an explicit 401 (after refresh attempt) as "session expired".
-    // The apiFetch interceptor calls storeLogout() in that case, so we check
-    // the store state in the catch block.
+    // Validate session in background — don't block the UI or force logout on failure.
+    // The 401 interceptor in api-client handles token refresh automatically.
+    // Only redirect to login if the session is definitely invalid.
     getMe()
       .then((user) => setUserRef.current(user))
       .catch(() => {
-        // Re-read the current state — the interceptor may have logged us out
-        // if the session was genuinely expired (401 after refresh attempt).
-        // If it didn't (e.g. network error), keep the user on the page —
-        // forcing them back to /login for a transient issue is worse than
-        // showing stale data.
+        // Session validation failed — but don't immediately force logout.
+        // The 401 interceptor already tried to refresh. If it succeeded, we're fine.
+        // If it failed, the interceptor already called storeLogout().
+        // Re-read the current state to check if the interceptor logged us out.
         const { isAuthenticated: stillAuth } = useAppStore.getState();
         if (!stillAuth) {
           routerRef.current.push('/login');

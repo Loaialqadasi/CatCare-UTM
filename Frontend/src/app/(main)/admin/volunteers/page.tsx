@@ -59,8 +59,10 @@ export default function AdminVolunteersPage() {
     }
   }, []);
 
+  const ROLE_RANK: Record<string, number> = { student: 0, volunteer: 1, manager: 2, admin: 3 };
+
   useEffect(() => {
-    if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
+    if (!user || (ROLE_RANK[user.role] ?? 0) < ROLE_RANK['manager']) {
       router.push('/dashboard');
       return;
     }
@@ -84,7 +86,7 @@ export default function AdminVolunteersPage() {
     }
   };
 
-  if (!user || (user.role !== 'admin' && user.role !== 'manager')) return null;
+  if (!user || (ROLE_RANK[user.role] ?? 0) < ROLE_RANK['manager']) return null;
 
   const stats = {
     total: pagination.totalItems,

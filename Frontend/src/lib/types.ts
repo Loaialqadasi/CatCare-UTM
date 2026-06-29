@@ -3,22 +3,6 @@
 // --- user ---
 export type UserRole = 'student' | 'volunteer' | 'manager' | 'admin';
 
-/**
- * Role display metadata — used by badges, dropdowns, and access checks.
- * Keep in sync with backend `ROLE_RANK` (Mohamed_Abdelgawwad-CCU-S1-04-Foundation/types.ts).
- */
-export const ROLE_META: Record<UserRole, { label: string; rank: number; color: string }> = {
-  student:  { label: 'Student',  rank: 0, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' },
-  volunteer:{ label: 'Volunteer',rank: 1, color: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' },
-  manager:  { label: 'Manager',  rank: 2, color: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300' },
-  admin:    { label: 'Admin',    rank: 3, color: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300' },
-};
-
-export function hasMinRole(userRole: UserRole | undefined, minRole: UserRole): boolean {
-  if (!userRole) return false;
-  return ROLE_META[userRole].rank >= ROLE_META[minRole].rank;
-}
-
 export interface User {
   id: string;
   fullName: string;
@@ -68,6 +52,10 @@ export interface EmergencyReport {
   createdAt: string;
   updatedAt: string;
   resolvedAt: string | null;
+  proofNotes: string | null;
+  proofImageUrl: string | null;
+  proofSubmittedByUserId: string | null;
+  proofSubmittedAt: string | null;
   cat: { id: string; nickname: string } | null;
 }
 
@@ -174,51 +162,6 @@ export interface CareHistoryEntry {
   performedBy: string;
   performedByUserId: string | null;
   createdAt: string;
-}
-
-// --- user activity / history timeline ---
-// Unified shape for every action a user has taken across CatCare.
-export type ActivityType =
-  | 'cat_created'
-  | 'care_logged'
-  | 'emergency_reported'
-  | 'donation_made'
-  | 'volunteer_applied'
-  | 'volunteer_status_changed';
-
-export type ActivityResourceType =
-  | 'cat'
-  | 'care_history'
-  | 'emergency'
-  | 'donation'
-  | 'volunteer';
-
-export interface UserActivity {
-  id: string;
-  type: ActivityType;
-  title: string;
-  description: string;
-  status: string | null;
-  resourceId: number;
-  resourceType: ActivityResourceType;
-  href: string | null;
-  createdAt: string;
-}
-
-export interface ActivitySummary {
-  totalCats: number;
-  totalCareActions: number;
-  totalEmergencies: number;
-  totalDonations: number;
-  totalDonationAmount: number;
-  approvedDonationAmount: number;
-  volunteerStatus: string | null;
-  totalActivities: number;
-}
-
-export interface UserActivityResponse {
-  activities: UserActivity[];
-  summary: ActivitySummary;
 }
 
 // --- views / pages ---

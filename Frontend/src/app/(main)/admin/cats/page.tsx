@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,7 +25,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Cat, MapPin, Calendar, Pencil, Trash2, Loader2, ImagePlus, X, Search } from 'lucide-react';
+import { Cat, MapPin, Calendar, Pencil, Trash2, RotateCcw, Loader2, ImagePlus, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchCats, updateCat, deleteCat, restoreCat } from '@/lib/api-client';
 import { toast } from 'sonner';
@@ -83,13 +83,16 @@ export default function AdminCatsPage() {
   // Show deleted cats toggle
   const [showDeleted, setShowDeleted] = useState(false);
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const ROLE_RANK: Record<string, number> = { student: 0, volunteer: 1, manager: 2, admin: 3 };
+  const userRank = ROLE_RANK[user?.role ?? 'student'] ?? 0;
+  const isAdmin = user?.role === 'admin';
+  const isManagerPlus = userRank >= ROLE_RANK['manager'];
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isManagerPlus) {
       router.push('/dashboard');
     }
-  }, [user, router, isAdmin]);
+  }, [user, router, isManagerPlus]);
 
   const loadData = useCallback(async () => {
     try {
@@ -107,12 +110,12 @@ export default function AdminCatsPage() {
   }, [healthFilter]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isManagerPlus) {
       loadData();
     }
-  }, [loadData, isAdmin]);
+  }, [loadData, isManagerPlus]);
 
-  if (!isAdmin) return null;
+  if (!isManagerPlus) return null;
 
   // Filter cats by search query
   const filteredCats = cats.filter((cat) => {
@@ -331,15 +334,17 @@ export default function AdminCatsPage() {
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => openDeleteDialog(cat)}
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                        title="Delete Cat"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openDeleteDialog(cat)}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                          title="Delete Cat"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

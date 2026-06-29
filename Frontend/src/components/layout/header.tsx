@@ -19,6 +19,7 @@ import {
   User,
   Bell,
   ChevronDown,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logout as apiLogout } from '@/lib/api-client';
@@ -26,12 +27,14 @@ import { logout as apiLogout } from '@/lib/api-client';
 const roleColors: Record<string, string> = {
   student: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
   volunteer: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  manager: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300',
   admin: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
 };
 
 const roleLabels: Record<string, string> = {
   student: 'Student',
   volunteer: 'Volunteer',
+  manager: 'Manager',
   admin: 'Admin',
 };
 
@@ -84,27 +87,22 @@ export function Header({ onMenuClick }: HeaderProps) {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
-        {/* Notifications — placeholder, coming soon.
-            Disabled to make it clear the button has no action yet.
-            Red dot removed so users don't think they have unread alerts. */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 relative opacity-60 cursor-not-allowed"
-          disabled
-          aria-label="Notifications coming soon"
-          title="Notifications coming soon"
-        >
+        {/* Notifications */}
+        <Button variant="ghost" size="icon" className="h-9 w-9 relative">
           <Bell className="h-4.5 w-4.5" />
-          <span className="sr-only">Notifications coming soon</span>
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+          <span className="sr-only">Notifications</span>
         </Button>
 
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent transition-colors cursor-pointer border border-transparent hover:border-border/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500" aria-label="User menu">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 text-white text-xs font-bold">
+              <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 text-white text-xs font-bold">
                 {initials}
+                {(user.role === 'manager' || user.role === 'admin') && (
+                  <Shield className="absolute -bottom-0.5 -right-0.5 h-3 w-3 text-violet-600 dark:text-violet-400 fill-violet-100 dark:fill-violet-950" />
+                )}
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-foreground leading-tight">

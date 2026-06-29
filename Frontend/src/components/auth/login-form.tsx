@@ -13,40 +13,6 @@ import { useAppStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
-/**
- * Detect fetch errors that mean "the backend is unreachable" vs "wrong credentials".
- * Browsers throw a TypeError with `message: "Failed to fetch"` for any network-level
- * failure (DNS, connection refused, CORS preflight rejected, etc.) — the actual cause
- * is only visible in the browser DevTools console. We surface a friendlier message.
- */
-function describeLoginError(err: unknown): { title: string; description: string } {
-  if (err instanceof TypeError && /failed to fetch|networkerror/i.test(err.message)) {
-    return {
-      title: 'Cannot reach the server',
-      description:
-        'The backend is unreachable — check that it is running and that NEXT_PUBLIC_API_URL or BACKEND_URL is set correctly. See the browser console for the underlying error.',
-    };
-  }
-  if (err instanceof Error) {
-    if (err.message === 'SESSION_EXPIRED') {
-      return {
-        title: 'Session expired',
-        description: 'Your previous session ended. Please sign in again.',
-      };
-    }
-    // Backend returned a 401 with its own message (e.g. "Invalid email or password")
-    // or a 500 with an error envelope — surface that directly.
-    return {
-      title: 'Login failed',
-      description: err.message,
-    };
-  }
-  return {
-    title: 'Login failed',
-    description: 'An unexpected error occurred. Please try again.',
-  };
-}
-
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -78,19 +44,11 @@ export function LoginForm() {
       const result = await login({ email, password });
       storeLogin(result.user);
       toast.success('Welcome back!', { description: `Logged in as ${result.user.fullName}` });
-      // Hard navigation (full page reload) instead of client-side router.push.
-      // This forces the (main) layout to mount fresh and read the just-persisted
-      // auth state from localStorage, eliminating a class of "stuck on login"
-      // bugs where the layout would briefly see isAuthenticated=false before
-      // zustand rehydration completed and immediately redirect back to /login.
-      if (typeof window !== 'undefined') {
-        window.location.assign('/dashboard');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push('/dashboard');
     } catch (err) {
-      const { title, description } = describeLoginError(err);
-      toast.error(title, { description });
+      toast.error('Login failed', {
+        description: err instanceof Error ? err.message : 'Please check your credentials',
+      });
     } finally {
       setLoading(false);
     }

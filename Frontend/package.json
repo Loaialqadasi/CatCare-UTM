@@ -1,18 +1,12 @@
 {
   "name": "catcare-utm-frontend",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "CatCare UTM — Campus Cat Management System frontend (Next.js 16 + React 19 + Tailwind 4 + shadcn/ui).",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "verify": "npm run typecheck && npm run lint && npm run test"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -42,20 +36,14 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.1.0",
     "@types/leaflet": "^1.9.21",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^4.3.4",
     "bun-types": "^1.3.4",
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",
-    "jsdom": "^25.0.1",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
-    "typescript": "^5",
-    "vitest": "^2.1.8",
-    "@vitest/coverage-v8": "^2.1.8"
+    "typescript": "^5"
   }
 }

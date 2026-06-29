@@ -1,64 +1,47 @@
 import { NextFunction, Request, Response } from 'express';
 import { AuthorizationError } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/errors.js';
-import { hasMinRole, UserRole } from '../Mohamed_Abdelgawwad-CCU-S1-04-Foundation/types.js';
 
-// ─── Role-based access control ──────────────────────────────────────────────
-// Role hierarchy (low → high privilege):
-//   student < volunteer < manager < admin
-//
-// Capabilities matrix:
-//   ┌─────────────┬──────────┬────────────┬─────────┬───────┐
-//   │ Capability  │ student  │ volunteer  │ manager │ admin │
-//   ├─────────────┼──────────┼────────────┼─────────┼───────┤
-//   │ browse cats │    ✓     │     ✓      │    ✓    │   ✓   │
-//   │ report emer │    ✓     │     ✓      │    ✓    │   ✓   │
-//   │ donate      │    ✓     │     ✓      │    ✓    │   ✓   │
-//   │ care log    │    ✗     │     ✓      │    ✓    │   ✓   │
-//   │ manage cats │    ✗     │     ✗      │    ✓    │   ✓   │
-//   │ review vol  │    ✗     │     ✗      │    ✓    │   ✓   │
-//   │ emergency ●│    ✗     │     ✗      │    ✓    │   ✓   │
-//   │ review don  │    ✗     │     ✗      │    ✗    │   ✓   │
-//   │ manage users│    ✗     │     ✗      │    ✗    │   ✓   │
-//   │ reset pass  │    ✗     │     ✗      │    ✗    │   ✓   │
-//   └─────────────┴──────────┴────────────┴─────────┴───────┘
-//
-// "emergency ●" = update emergency status (resolve, cancel, etc.)
+export type UserRole = 'student' | 'volunteer' | 'manager' | 'admin';
 
-/**
- * Generic RBAC guard — allows any role at-or-above the given minimum.
- *
- * Usage:
- *   requireRole('manager')   → manager + admin
- *   requireRole('admin')    → admin only
- */
-export function requireRole(minRole: UserRole) {
-  return (req: Request, _res: Response, next: NextFunction): void => {
-    if (!req.user || !hasMinRole(req.user.role, minRole)) {
-      next(new AuthorizationError(`${minRole} access required`));
-      return;
-    }
-    next();
-  };
+const ROLE_RANK: Record<UserRole, number> = {
+  student: 0,
+  volunteer: 1,
+  manager: 2,
+  admin: 3,
+};
+
+function hasMinRole(userRole: string, minRole: UserRole): boolean {
+  return (ROLE_RANK[userRole as UserRole] ?? -1) >= ROLE_RANK[minRole];
 }
 
-/**
- * Manager-or-admin middleware.
- *
- * Use for: managing cats (CRUD), updating emergency status, reviewing
- * volunteer applications, recording care history on behalf of others.
- */
-export const managerMiddleware = requireRole('manager');
+/** Manager or above — use for: managing cats, emergencies, volunteers */
+export const managerMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
+  if (!req.user || !hasMinRole(req.user.role, 'manager')) {
+    return next(new AuthorizationError('Manager access required'));
+  }
+  next();
+};
 
-/**
- * Admin-only middleware.
- *
- * Use for: user management (create/delete/update users), role changes,
- * password resets, donation review (approve/reject).
- */
-export const adminMiddleware = requireRole('admin');
+/** Admin or above — use for: managing users, reviewing donations */
+export const adminMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
+  if (!req.user || !hasMinRole(req.user.role, 'admin')) {
+    return next(new AuthorizationError('Admin access required'));
+  }
+  next();
+};
 
-/**
- * Alias kept for backwards compatibility with existing route definitions.
- * Equivalent to adminMiddleware.
- */
-export const adminOnlyMiddleware = adminMiddleware;
+/** Admin-only — same as adminMiddleware, explicit alias for user management */
+export const adminOnlyMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
+  if (!req.user || !hasMinRole(req.user.role, 'admin')) {
+    return next(new AuthorizationError('Admin access required'));
+  }
+  next();
+};
+
+/** Volunteer or above — use for: updating cat status, recording care history */
+export const volunteerMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
+  if (!req.user || !hasMinRole(req.user.role, 'volunteer')) {
+    return next(new AuthorizationError('Volunteer access required'));
+  }
+  next();
+};

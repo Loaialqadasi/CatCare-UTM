@@ -33,12 +33,7 @@ interface NavItem {
   icon: React.ReactNode;
   section?: string;
   route: string;
-  /**
-   * 'admin'   → only admin role sees this nav item (user management, donation review)
-   * 'manager' → manager + admin see this nav item (cat mgmt, emergency mgmt, volunteer review)
-   * undefined → everyone (authenticated) sees this nav item
-   */
-  minRole?: 'manager' | 'admin';
+  minRole?: 'volunteer' | 'manager' | 'admin';
 }
 
 const navItems: NavItem[] = [
@@ -109,7 +104,7 @@ const navItems: NavItem[] = [
     id: 'admin-donations',
     label: 'Review Donations',
     icon: <ClipboardCheck className="h-5 w-5" />,
-    section: 'Admin',
+    section: 'Management',
     route: '/admin/donations',
     minRole: 'admin',
   },
@@ -117,7 +112,7 @@ const navItems: NavItem[] = [
     id: 'admin-users',
     label: 'Manage Users',
     icon: <Users className="h-5 w-5" />,
-    section: 'Admin',
+    section: 'Management',
     route: '/admin/users',
     minRole: 'admin',
   },
@@ -125,7 +120,7 @@ const navItems: NavItem[] = [
     id: 'admin-emergencies',
     label: 'Manage Emergencies',
     icon: <Shield className="h-5 w-5" />,
-    section: 'Admin',
+    section: 'Management',
     route: '/admin/emergencies',
     minRole: 'manager',
   },
@@ -133,7 +128,7 @@ const navItems: NavItem[] = [
     id: 'admin-volunteers',
     label: 'Manage Volunteers',
     icon: <HandHeart className="h-5 w-5" />,
-    section: 'Admin',
+    section: 'Management',
     route: '/admin/volunteers',
     minRole: 'manager',
   },
@@ -141,7 +136,7 @@ const navItems: NavItem[] = [
     id: 'admin-cats',
     label: 'Manage Cats',
     icon: <Cat className="h-5 w-5" />,
-    section: 'Admin',
+    section: 'Management',
     route: '/admin/cats',
     minRole: 'manager',
   },
@@ -163,10 +158,15 @@ function SidebarContent({
   const router = useRouter();
   const pathname = usePathname();
 
-  const isAdmin = user?.role === 'admin';
-  const isManagerOrAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const ROLE_RANK: Record<string, number> = {
+    student: 0,
+    volunteer: 1,
+    manager: 2,
+    admin: 3,
+  };
+  const userRank = ROLE_RANK[user?.role ?? 'student'] ?? 0;
 
-  const sections = ['Main', 'Actions', 'Admin', 'Account'];
+  const sections = ['Main', 'Actions', 'Management', 'Account'];
 
   const handleNavigate = (route: string) => {
     router.push(route);
@@ -195,10 +195,12 @@ function SidebarContent({
     return false;
   };
 
-  // Filter items based on role — H-1 FIX: respect minRole for RBAC
+  // Filter items based on role — rank-based access control
   const visibleItems = navItems.filter((item) => {
-    if (item.minRole === 'admin' && !isAdmin) return false;
-    if (item.minRole === 'manager' && !isManagerOrAdmin) return false;
+    if (item.minRole) {
+      const requiredRank = ROLE_RANK[item.minRole] ?? 0;
+      if (userRank < requiredRank) return false;
+    }
     return true;
   });
 

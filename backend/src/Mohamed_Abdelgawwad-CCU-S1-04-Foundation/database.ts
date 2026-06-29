@@ -1,5 +1,4 @@
 import dns from 'node:dns';
-import type { LookupOneOptions } from 'node:dns';
 import pg from 'pg';
 import { env } from './env.js';
 import { logger } from './logger.js';
@@ -39,27 +38,19 @@ function buildSslConfig() {
 }
 
 // Custom DNS lookup that ONLY returns IPv4 addresses.
-// Belt-and-suspenders fix for hosts with broken IPv6 routing.
-type DnsCallback = (err: NodeJS.ErrnoException | null, address: string, family: number) => void;
-const ipv4OnlyLookup = (
-  hostname: string,
-  options: LookupOneOptions | number,
-  callback: DnsCallback,
-): void => {
-  const opts: LookupOneOptions =
-    typeof options === 'number' ? { family: options } : { ...options, family: 4 };
+// This is the belt-and-suspenders fix for hosts with broken IPv6 routing.
+const ipv4OnlyLookup: dns.LookupOneOptions['lookup'] = (hostname, options, callback) => {
+  const opts = typeof options === 'number' ? { family: options } : { ...options, family: 4 };
   dns.lookup(hostname, opts, callback);
 };
 
-const poolConfig = {
+const poolConfig: pg.PoolConfig = {
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
-  // Force IPv4 — Render's containers cannot reach IPv6 addresses.
-  // Cast to unknown→pg.PoolConfig because pg's types don't expose `lookup`,
-  // even though the underlying pg-pool / net.Socket code honours it.
-  lookup: ipv4OnlyLookup,
-} as unknown as pg.PoolConfig;
+  // Force IPv4 — Render's containers cannot reach IPv6 addresses
+  lookup: ipv4OnlyLookup as any,
+};
 
 if (env.DATABASE_URL) {
   // Connection-string mode (Supabase, Neon, Render, etc.)

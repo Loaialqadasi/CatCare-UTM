@@ -5,8 +5,15 @@ import { useState, useMemo, useEffect, Component, ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { fetchCats, fetchEmergencies, geocodeAddress } from '@/lib/api-client';
-import { Search, Building2, X, AlertTriangle, MapPin, Loader2, Crosshair, Plus } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { fetchCats, fetchEmergencies } from '@/lib/api-client';
+import { Search, Building2, X, AlertTriangle, MapPin, Crosshair, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Cat, EmergencyReport, HealthStatus } from '@/lib/types';
 
@@ -135,15 +142,17 @@ export default function MapPage() {
   // to the "Create Cat" form with those coordinates pre-filled.
   const [pickMode, setPickMode] = useState(false);
   const [pickedPos, setPickedPos] = useState<[number, number] | null>(null);
-  const [placeSearch, setPlaceSearch] = useState('');
-  const [placeResults, setPlaceResults] = useState<Array<{ lat: number; lon: number; displayName: string }>>([]);
-  const [placeSearching, setPlaceSearching] = useState(false);
-  const [showPlaceResults, setShowPlaceResults] = useState(false);
+  // Dropdown selected location — replaces the broken Nominatim text search
+  const [selectedLocation, setSelectedLocation] = useState<string>('');
   const router = useRouter();
 
-  // Load buildings data on client only
+  // Load buildings data on client only — with error handling
   useEffect(() => {
-    buildingDataPromise.then(setBuildings);
+    buildingDataPromise
+      .then(setBuildings)
+      .catch((err) => {
+        console.error('Failed to load building data:', err);
+      });
   }, []);
 
   useEffect(() => {
@@ -190,35 +199,21 @@ export default function MapPage() {
     return Array.from(types);
   }, [buildings]);
 
-  // Place search (debounced) — uses backend /api/map/geocode
-  useEffect(() => {
-    if (!placeSearch.trim() || placeSearch.trim().length < 3) {
-      setPlaceResults([]);
+  // When a location is selected from the dropdown, fly to it on the map
+  const handleLocationSelect = (value: string) => {
+    if (value === '_none_') {
+      setSelectedLocation('');
+      setSelectedBuilding(null);
+      setPickedPos(null);
       return;
     }
-    const t = setTimeout(async () => {
-      setPlaceSearching(true);
-      try {
-        const q = /utm|johor|skudai/i.test(placeSearch)
-          ? placeSearch
-          : `${placeSearch} UTM Johor Bahru`;
-        const results = await geocodeAddress(q);
-        setPlaceResults(results);
-        setShowPlaceResults(true);
-      } catch {
-        setPlaceResults([]);
-      } finally {
-        setPlaceSearching(false);
-      }
-    }, 500);
-    return () => clearTimeout(t);
-  }, [placeSearch]);
-
-  const handlePlaceSelect = (lat: number, lon: number, name: string) => {
-    setPickedPos([lat, lon]);
-    setPickMode(true);
-    setShowPlaceResults(false);
-    setPlaceSearch(name.split(',')[0]);
+    setSelectedLocation(value);
+    setSelectedBuilding(value);
+    const building = buildings.find(b => b.name === value);
+    if (building) {
+      setPickedPos([building.lat, building.lng]);
+      setPickMode(true);
+    }
   };
 
   const handleUseMyLocation = () => {
@@ -291,7 +286,7 @@ export default function MapPage() {
                       type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={() => setPickedPos(null)}
+                      onClick={() => { setPickedPos(null); setSelectedLocation(''); setSelectedBuilding(null); }}
                       className="text-muted-foreground"
                     >
                       <X className="h-3.5 w-3.5 mr-1" />
@@ -303,46 +298,24 @@ export default function MapPage() {
                   </>
                 )}
               </div>
-              {/* Place search */}
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Search for a real place in UTM (e.g., Library, Cafeteria, KTR)..."
-                  value={placeSearch}
-                  onChange={(e) => setPlaceSearch(e.target.value)}
-                  onFocus={() => setShowPlaceResults(true)}
-                  className="pl-9 pr-9 h-8 text-sm"
-                />
-                {placeSearching && (
-                  <Loader2 className="absolute right-8 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                )}
-                {placeSearch && (
-                  <button
-                    onClick={() => { setPlaceSearch(''); setPlaceResults([]); setShowPlaceResults(false); }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-                {showPlaceResults && placeResults.length > 0 && (
-                  <div className="absolute z-[1000] mt-1 w-full max-h-64 overflow-y-auto rounded-md border border-border bg-popover shadow-lg">
-                    {placeResults.map((r, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handlePlaceSelect(r.lat, r.lon, r.displayName)}
-                        className="w-full text-left p-2.5 hover:bg-muted/50 border-b border-border/50 last:border-0 transition-colors"
-                      >
-                        <div className="flex items-start gap-2">
-                          <MapPin className="h-3.5 w-3.5 mt-0.5 text-amber-500 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{r.displayName.split(',')[0]}</p>
-                            <p className="text-xs text-muted-foreground truncate">{r.displayName}</p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+              {/* Location dropdown — replaces broken Nominatim search */}
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Find a UTM location</label>
+                <Select value={selectedLocation} onValueChange={handleLocationSelect}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Select a building or location in UTM..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="_none_">-- Select a location --</SelectItem>
+                    {buildings
+                      .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name))
+                      .map((building, idx) => (
+                        <SelectItem key={idx} value={building.name}>
+                          {buildingTypeEmojis[building.type]} {building.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
@@ -440,7 +413,16 @@ export default function MapPage() {
                 {filteredBuildings.map((building, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setSelectedBuilding(selectedBuilding === building.name ? null : building.name)}
+                    onClick={() => {
+                      setSelectedBuilding(selectedBuilding === building.name ? null : building.name);
+                      setSelectedLocation(selectedBuilding === building.name ? '' : building.name);
+                      if (selectedBuilding !== building.name) {
+                        setPickedPos([building.lat, building.lng]);
+                        setPickMode(true);
+                      } else {
+                        setPickedPos(null);
+                      }
+                    }}
                     className={`w-full text-left p-2 rounded-lg text-xs transition-colors hover:bg-muted/50 ${
                       selectedBuilding === building.name ? 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800' : ''
                     }`}

@@ -24,6 +24,10 @@ export interface EmergencyReport {
   createdAt: string;
   updatedAt: string;
   resolvedAt: string | null;
+  proofNotes: string | null;
+  proofImageUrl: string | null;
+  proofSubmittedByUserId: number | null;
+  proofSubmittedAt: string | null;
 }
 
 export interface EmergencyReportWithCat extends EmergencyReport {
@@ -42,8 +46,15 @@ export interface CreateEmergencyInput {
   reportedByUserId: number | null;
 }
 
+export interface SubmitProofInput {
+  proofNotes: string;
+  proofImageUrl?: string | null;
+}
+
 export interface UpdateEmergencyStatusInput {
   status: EmergencyStatus;
+  proofNotes?: string;
+  proofImageUrl?: string | null;
 }
 
 export interface EmergencyListQuery {

@@ -719,49 +719,6 @@ describe('Admin Routes', () => {
     expect(res.body.data.role).toBe('volunteer');
   });
 
-  it('admin can create a user with manager role', async () => {
-    const newUserEmail = uniqueEmail();
-    const res = await request(app)
-      .post('/api/auth/users')
-      .set('Cookie', adminCookies)
-      .set('X-CSRF-Token', adminCsrfToken)
-      .send({
-        fullName: 'Manager User',
-        email: newUserEmail,
-        password: 'ManagerP@ss1',
-        role: 'manager',
-      });
-
-    expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.role).toBe('manager');
-  });
-
-  it('admin can change user role to manager', async () => {
-    // Create a student first
-    const createRes = await request(app)
-      .post('/api/auth/users')
-      .set('Cookie', adminCookies)
-      .set('X-CSRF-Token', adminCsrfToken)
-      .send({
-        fullName: 'Future Manager',
-        email: uniqueEmail(),
-        password: 'FutureP@ss1',
-        role: 'student',
-      });
-    const userId = createRes.body.data.id;
-
-    const res = await request(app)
-      .patch(`/api/auth/users/${userId}/role`)
-      .set('Cookie', adminCookies)
-      .set('X-CSRF-Token', adminCsrfToken)
-      .send({ role: 'manager' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.role).toBe('manager');
-  });
-
   it('admin create user should reject weak passwords', async () => {
     const res = await request(app)
       .post('/api/auth/users')

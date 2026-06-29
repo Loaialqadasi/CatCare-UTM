@@ -115,31 +115,3 @@ CREATE TABLE IF NOT EXISTS care_history (
 );
 CREATE INDEX IF NOT EXISTS idx_care_history_cat_id ON care_history (cat_id);
 CREATE INDEX IF NOT EXISTS idx_care_history_created_at ON care_history (created_at);
-CREATE INDEX IF NOT EXISTS idx_care_history_cat_created ON care_history (cat_id, created_at DESC);
-
--- ─── Audit Log Table ───
--- Captures security-relevant actions for compliance and forensics.
-CREATE TABLE IF NOT EXISTS audit_log (
-  id BIGSERIAL PRIMARY KEY,
-  actor_user_id BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
-  actor_email VARCHAR(160) NULL,
-  action VARCHAR(80) NOT NULL,
-  target_type VARCHAR(40) NULL,
-  target_id VARCHAR(40) NULL,
-  metadata JSONB NULL,
-  ip_address INET NULL,
-  user_agent TEXT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_audit_log_actor      ON audit_log (actor_user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_action     ON audit_log (action, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_target     ON audit_log (target_type, target_id);
-CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log (created_at DESC);
-
--- ─── updated_at maintenance trigger ───
-CREATE OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
